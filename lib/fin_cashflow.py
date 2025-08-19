@@ -4,7 +4,7 @@ import pandas as pd
 
 from .logger import Logger
 
-from .commonlib import *
+from .common import *
 from .errors import *
 
 class FinCashflow:
@@ -133,7 +133,7 @@ class FinCashflow:
         try:
             m_savingrate  = float(m_savings / m_incomes     )
         except Exception as ZeroDivisionError:
-            m_savingrate = 0;
+            m_savingrate = 0
 
         row_today_cashflow = pd.DataFrame({
             "incomes": [m_incomes],

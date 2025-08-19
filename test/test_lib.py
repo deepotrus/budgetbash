@@ -6,15 +6,9 @@ from lib import FinInvestments
 from lib import FinPlot
 from lib import Logger
 from lib.logger import set_logging_level
+from lib.common import format_df_for_print
 
 from tabulate import tabulate
-
-# Assumes df has datetime index!
-def format_df_for_print(df):
-    dfplot = df.copy()
-    dfplot = dfplot.round(2)
-    dfplot.index = dfplot.index.strftime('%Y-%m-%d')
-    return dfplot
 
 
 import pandas as pd

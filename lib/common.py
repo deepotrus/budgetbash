@@ -41,7 +41,7 @@ def load_init_holdings(path : Path, YEAR : int):
         init_holdings = json.loads(data)
         return init_holdings
     except Exception as e:
-        print(e)
+        #print(e)
         return None
 
 def load_data(typedata : str, path : Path, YEAR : int):
@@ -66,10 +66,21 @@ def load_data(typedata : str, path : Path, YEAR : int):
                 if not(df.empty):
                     dfl.append(df)
             except Exception as e:
-                print(e)
+                #print(e)
                 continue
 
         df_year = pd.concat(dfl)
         df_year['Date'] = pd.to_datetime(df_year['Date'])
         df_year.set_index('Date',inplace=True)
         return df_year
+
+
+
+# -------------- PRETTY PRINTS --------------------
+
+# Assumes df has datetime index!
+def format_df_for_print(df):
+    dfplot = df.copy()
+    dfplot = dfplot.round(2)
+    dfplot.index = dfplot.index.strftime('%Y-%m-%d')
+    return dfplot
