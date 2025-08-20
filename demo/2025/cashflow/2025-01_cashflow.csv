@@ -1,0 +1,9 @@
+Date      ,Type,Coin,Qty      ,Category   ,Subcategory,Description
+2025-01-01,Hype,EUR ,+2119    ,Employment ,Salary
+2025-01-01,Hype,EUR ,-41.18   ,Groceries  ,Diet   ,Some chicken and tuna
+2025-01-02,Hype,EUR ,-412     ,Health     ,Gym    ,6 months subscription
+2025-01-11,Hype,EUR ,-30.25   ,Groceries  ,Diet   ,groceries at aldi for the week
+2025-01-26,Revolut,EUR,-7     ,Leisure  ,Food     ,Kebab
+2025-01-14,BBVA,EUR,-8    ,Transport  ,Bicycle    ,Repairs
+2025-01-20,BBVA,EUR,-52.94,Groceries  ,Diet       ,Big groceries
+2025-01-23,BBVA,EUR,-1.70 ,Leisure    ,Drink      ,Gingseng

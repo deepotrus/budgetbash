@@ -10,6 +10,8 @@ from lib.common import format_df_for_print
 
 from tabulate import tabulate
 
+persona_data_path = "../../data"
+
 
 import pandas as pd
 def calc_global_nw(row_today_cashflow, df_today_holdings, df_m_cashflow, df_year_holdings):
@@ -30,7 +32,7 @@ if __name__ == "__main__":
 
     Logger.info("Starting lib test")
 
-    finCashflow = FinCashflow("../../data", YEAR)
+    finCashflow = FinCashflow(persona_data_path, YEAR)
     finCashflow.run()
 
     init_holdings = finCashflow.init_holdings
@@ -50,7 +52,7 @@ if __name__ == "__main__":
     print(tabulate(format_df_for_print(df_m_cashflow).T, headers='keys', tablefmt='psql'))
     print(balances)
 
-    finInvest = FinInvestments("../../data", YEAR)
+    finInvest = FinInvestments(persona_data_path, YEAR)
     finInvest.run()
 
     df_year_investments = finInvest.df_year_investments
