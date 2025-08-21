@@ -178,7 +178,7 @@ def save_to_csv(date, bank, number, category, subcategory, description, filename
             'Description': description,
         })
 
-def start_tuicsv(stdscr, month : str, YEAR : int):
+def start_tuicsv(stdscr, month : str, YEAR : int, persona_data_path : str):
     # stdscr supports displaying text, erase it, ...
     stdscr.clear() # clear the screen
     curses.curs_set(0)
@@ -349,7 +349,7 @@ def subconsole(YEAR : int, persona_data_path : str):
                     curses.cbreak()  # Enable cbreak mode (don't wait for newline)
 
                     try:
-                        start_tuicsv(stdscr, month, YEAR)
+                        start_tuicsv(stdscr, month, YEAR, persona_data_path)
                     finally: # Clean up curses
                         curses.nocbreak()
                         stdscr.keypad(False)
