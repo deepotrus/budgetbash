@@ -25,7 +25,7 @@ import pandas as pd
 
 mydict = {
     'Transfer': ['ToBBVA','ToRevolut','ToDirecta','ToING','ToINGCD','ToHype','ToBitget','ToCash','Invest','FromBBVA','FromRevolut','FromDirecta','FromBitget','FromING','FromINGCD','FromHype'],
-    'Subs': ['Bank', 'VPS', 'SIM', 'VPN', 'Amazon'],
+    'Subs': ['Bank', 'VPS', 'SIM', 'VPN', 'Amazon','Services'],
     'Groceries': ['Diet', 'Food','Supplements'],
     'Health': ['Gym', 'Hygiene', 'Eyes', 'Visit'],
     'Leisure': ['Food', 'Drink', 'Events', 'Restaurant', 'Games', 'Karma', 'Party', 'Family', 'Coffee'],
@@ -69,7 +69,7 @@ def calc_global_nw(row_today_cashflow, df_today_holdings, df_m_cashflow, df_year
     nw_global["ch%"] = (nw_global.networth - nw_global.networth.shift(1) )/ nw_global.networth
     return nw_global
 
-def status(YEAR : int, finCashflow : FinCashflow, finInvest : FinInvestments):
+def status(YEAR : int, finCashflow : FinCashflow, finInvest : FinInvestments, detailed : bool = False):
     init_holdings = finCashflow.init_holdings
     df_year_cashflow = finCashflow.df_year_cashflow
     df_m_cashflow = finCashflow.df_m_cashflow
@@ -80,18 +80,28 @@ def status(YEAR : int, finCashflow : FinCashflow, finInvest : FinInvestments):
     df_year_investments = finInvest.df_year_investments
     df_year_holdings = finInvest.df_year_holdings
 
-    if (YEAR == datetime.datetime.now().year ):
-        df_today_cashflow = finCashflow.df_last_month_cashflow
-        df_today_holdings = finInvest.last_update_run()
-        
-        nw_global = calc_global_nw(df_today_cashflow, df_today_holdings, df_m_cashflow, df_year_holdings)
-        print(tabulate(format_df_for_print(nw_global).T, headers='keys', tablefmt='psql'))
-    else:
-        nw = pd.concat([df_m_cashflow['liquidity'], df_year_holdings['Total']], axis=1, keys=['liquidity', 'investments'])
-        nw['networth'] = nw.liquidity + nw.investments
-        nw["nwch"] = (nw.networth - nw.networth.shift(1) )
-        nw["ch%"] = (nw.networth - nw.networth.shift(1) )/ nw.networth
-        print(tabulate(format_df_for_print(nw).T, headers='keys', tablefmt='psql'))
+    try:
+        if (YEAR == datetime.datetime.now().year ):
+            df_today_cashflow = finCashflow.df_last_month_cashflow
+            df_today_holdings = finInvest.last_update_run()
+            
+            nw_global = calc_global_nw(df_today_cashflow, df_today_holdings, df_m_cashflow, df_year_holdings)
+            print(nw_global)
+            if detailed:
+                print(tabulate(format_df_for_print(nw_global).T, headers='keys', tablefmt='psql'))
+            else:
+                print(nw_global.iloc[-1].round(2))
+        else:
+            nw = pd.concat([df_m_cashflow['liquidity'], df_year_holdings['Total']], axis=1, keys=['liquidity', 'investments'])
+            nw['networth'] = nw.liquidity + nw.investments
+            nw["nwch"] = (nw.networth - nw.networth.shift(1) )
+            nw["ch%"] = (nw.networth - nw.networth.shift(1) )/ nw.networth
+            if detailed:
+                print(tabulate(format_df_for_print(nw).T, headers='keys', tablefmt='psql'))
+            else:
+                print(nw.iloc[-1].round(2))
+    except Exception as e:
+        print(e)
 
 def cmd_fullview(YEAR : int, persona_data_path : str):
     Logger.info("Starting lib test")
@@ -322,7 +332,9 @@ def subconsole(YEAR : int, persona_data_path : str):
         elif command == "clear":
             clear_screen()
         elif command == "nwstatus":
-            status(YEAR, finCashflow, finInvest)
+            status(YEAR, finCashflow, finInvest, detailed=False)
+        elif command == "nwstatus detailed":
+            status(YEAR, finCashflow, finInvest, detailed=True)
         elif command.startswith("expenses"):
             parts = command.split()
             if len(parts) == 1:
