@@ -1,0 +1,228 @@
+#!/bin/bash
+
+port_number=5000
+
+# Color definitions
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+CYAN='\033[0;36m'
+BOLD='\033[1m'
+NC='\033[0m' # No Color
+
+main_menu_options=("Initialize" "Dashboard Status" "Settings" "Quit")
+main_current_selection=0
+
+settings_menu_options=("Start Backend" "Stop Backend" "Set Port" "Set Demo" "Back")
+settings_current_selection=0
+
+# Function to display the main menu
+display_main_menu() {
+  clear
+  printf "  ${RED}~~~~ ${NC}${YELLOW}Menu${NC}${RED} ~~~~${NC}\n"
+
+  for i in "${!main_menu_options[@]}"; do
+    if [ $i -eq $main_current_selection ]; then
+      printf "  ${BOLD}${CYAN}▶ ${main_menu_options[$i]}${NC}\n"
+    else
+      printf "  ${GREEN}  ${main_menu_options[$i]}${NC}\n"
+    fi
+  done
+
+  printf "  ${RED}~~~~~~~~~~~~~~~~~~~~${NC}\n"
+  printf "  ${YELLOW}Use ↑↓ arrows to navigate, Enter to select${NC}\n"
+}
+
+# Function to read a single keypress
+read_key() {
+  local key
+  IFS= read -rsn1 key
+  case $key in
+  $'\x1b') # ESC sequence
+    IFS= read -rsn2 key
+    case $key in
+    '[A') echo "UP" ;;
+    '[B') echo "DOWN" ;;
+    '[C') echo "RIGHT" ;;
+    '[D') echo "LEFT" ;;
+    *) echo "UNKNOWN" ;;
+    esac
+    ;;
+  '') echo "ENTER" ;;
+  'q'|'Q') echo "QUIT" ;;
+  *) echo "UNKNOWN" ;;
+  esac
+}
+
+# Helper function
+backend_running() {
+  if curl -s localhost:$port_number/ > /dev/null 2>&1; then
+    return 0
+  else
+    return 1
+  fi
+}
+
+# Helper function
+run_if_backend_running() {
+  clear
+  if backend_running; then
+    $1 # execute the command passed as argument
+    printf "  ${YELLOW}\nPress any key to continue...${NC}\n"
+    read -n 1
+  else
+    printf "  ${RED}Backend is not running, please start it first...${NC}\n"
+    read -n 1
+  fi
+}
+
+# Function to display the settings submenu
+display_settings_menu() {
+  clear
+  echo -e "  ${RED}~~~~ ${NC}${YELLOW}Settings${NC}${RED} ~~~~${NC}"
+
+  for i in "${!settings_menu_options[@]}"; do
+    if [ $i -eq $settings_current_selection ]; then
+      echo -e "  ${BOLD}${CYAN}▶ ${settings_menu_options[$i]}${NC}"
+    else
+      echo -e "  ${GREEN}  ${settings_menu_options[$i]}${NC}"
+    fi
+  done
+
+  echo -e "  ${RED}~~~~~~~~~~~~~~~~~~~~~~~~${NC}"
+  echo -e "  ${YELLOW}Use ↑↓ arrows to navigate, Enter to select${NC}"
+}
+
+
+navigate_settings_menu() {
+  while true; do
+    display_settings_menu
+    key=$(read_key)
+
+    case $key in
+    "UP")
+      if [ $settings_current_selection -gt 0 ]; then
+        ((settings_current_selection--))
+      else
+        settings_current_selection=$((${#settings_menu_options[@]} - 1))
+      fi
+      ;;
+    "DOWN")
+      if [ $settings_current_selection -lt $((${#settings_menu_options[@]} - 1)) ]; then
+        ((settings_current_selection++))
+      else
+        settings_current_selection=0
+      fi
+      ;;
+    "ENTER")
+      selected_option="${settings_menu_options[$settings_current_selection]}"
+      if [ "$selected_option" = "Back" ]; then
+        return 0
+      elif [ "$selected_option" = "Start Backend" ]; then
+        if ! backend_running; then
+          clear
+          python3 deepbackend.py $port_number &
+          printf "  ${YELLOW}Backend started on port $port_number...${NC}\n"
+          printf "  ${GREEN}Press any key to return to main menu.${NC}\n"
+          printf "  ${GREEN}Note: this leaves the flask console in background.${NC}\n"
+        else
+          printf "  ${YELLOW}Backend is already running...${NC}\n"
+        fi
+        printf "\n  ${YELLOW}Press any key to continue...${NC}\n"
+        read -n 1
+      elif [ "$selected_option" = "Stop Backend" ]; then
+        run_if_backend_running "curl -X GET localhost:$port_number/shutdown"
+      elif [ "$selected_option" = "Set Port" ]; then
+        printf "Not implemented yet...\n"
+      elif [ "$selected_option" = "Set Demo" ]; then
+        printf "Not implemented yet...\n"
+      fi
+      ;;
+    esac
+  done
+}
+
+display_dashboard() {
+    clear
+    
+    # Fetch JSON data
+    local response=$(curl -s localhost:$port_number/dashboard_status)
+    # Check if response contains error
+    if echo "$response" | jq -e '.error' > /dev/null 2>&1; then
+        printf "  ${RED}Error: %s${NC}\n" "$(echo "$response" | jq -r '.error')"
+        return 1
+    fi
+    
+    # Extract values using jq
+    local liquidity=$(echo "$response" | jq -r '.liquidity')
+    local investments=$(echo "$response" | jq -r '.investments')
+    local networth=$(echo "$response" | jq -r '.networth')
+    local nwch=$(echo "$response" | jq -r '.nwch')
+    local pct_ch=$(echo "$response" | jq -r '.pct_ch')
+    
+    # Format numbers (remove decimals if .00)
+    liquidity=$(printf "%.2f" "$liquidity" | sed 's/\.00$//')
+    investments=$(printf "%.2f" "$investments" | sed 's/\.00$//')
+    networth=$(printf "%.2f" "$networth" | sed 's/\.00$//')
+    nwch=$(printf "%.2f" "$nwch" | sed 's/\.00$//')
+    pct_ch=$(printf "%.2f" "$pct_ch" | sed 's/\.00$//')
+
+    # Create dashboard
+    printf "  ${RED}┌─ DeepFinance Dashboard ─────────────────┐${NC}\n"
+    printf "  ${RED}│${NC} ${YELLOW}Net Worth:${NC} ${GREEN}€%s${NC} %*s ${RED}│${NC}\n" "$networth" $((25-${#networth})) ""
+    printf "  ${RED}│${NC} ${YELLOW}Liquidity:${NC} ${BLUE}€%s${NC} %*s ${RED}│${NC}\n" "$liquidity" $((25-${#liquidity})) ""
+    printf "  ${RED}│${NC} ${YELLOW}Investments:${NC} ${CYAN}€%s${NC} %*s ${RED}│${NC}\n" "$investments" $((25-${#investments})) ""
+    printf "  ${RED}│${NC} ${YELLOW}Net Worth Change:${NC} ${MAGENTA}€%s${NC} %*s ${RED}│${NC}\n" "$nwch" $((25-${#nwch})) ""
+    printf "  ${RED}│${NC} ${YELLOW}Percentage Change:${NC} ${MAGENTA}%s%%${NC} %*s ${RED}│${NC}\n" "$pct_ch" $((25-${#pct_ch})) ""
+    printf "  ${RED}└────────────────────────────────────────┘${NC}\n"
+    
+    printf "\n  ${YELLOW}Press any key to continue...${NC}\n"
+    read -n 1
+}
+
+# Function to handle main menu navigation
+navigate_main_menu() {
+  while true; do
+    display_main_menu
+    key=$(read_key)
+
+    case $key in
+    "UP")
+      if [ $main_current_selection -gt 0 ]; then
+        ((main_current_selection--))
+      else
+        main_current_selection=$((${#main_menu_options[@]} - 1))
+      fi
+      ;;
+    "DOWN")
+      if [ $main_current_selection -lt $((${#main_menu_options[@]} - 1)) ]; then
+        ((main_current_selection++))
+      else
+        main_current_selection=0
+      fi
+      ;;
+    "ENTER")
+      selected_option="${main_menu_options[$main_current_selection]}"
+      if [ "$selected_option" = "Initialize" ]; then
+        year=2025
+        data_path="../data"
+        run_if_backend_running "curl -X POST localhost:$port_number/initialize -d year=$year -d data_path=$data_path"
+      elif [ "$selected_option" = "Dashboard Status" ]; then
+        display_dashboard
+      elif [ "$selected_option" = "Settings" ]; then
+        navigate_settings_menu
+      elif [ "$selected_option" = "Quit" ]; then
+        #if backend_running; then
+        #  curl -X GET localhost:$port_number/shutdown
+        #  printf "  ${YELLOW}Backend stopped...${NC}\n"
+        #fi
+        printf "  ${BLUE}Goodbye!${NC}\n"
+        exit 0
+      fi
+      ;;
+    esac
+  done
+}
+
+navigate_main_menu

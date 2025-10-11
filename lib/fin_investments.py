@@ -34,6 +34,7 @@ class FinInvestments:
         self.df_year_investments : pd.DataFrame = load_data("investments", self.path, self.YEAR)
         self.assets : Dict[str, Dict[str, pd.DataFrame]]
         self.df_year_holdings : pd.DataFrame = pd.DataFrame()
+        self.df_today_holdings : pd.DataFrame = pd.DataFrame()
         pass
 
     def get_init_holdings_to_df(self):
@@ -182,6 +183,7 @@ class FinInvestments:
         assets_monthlyized = self.get_assets_monthlyized(holdings_monthlyized)
         assets = self.get_assets_global(assets_monthlyized, holdings_monthlyized)
         self.df_year_holdings = self.get_total_holdings(assets)
+        self.df_today_holdings = self.last_update_run()
         pass
 
     # ---------------- REAL TIME UPDATES ---------------------------
