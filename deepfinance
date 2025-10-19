@@ -2,6 +2,9 @@
 
 port_number=5000
 
+YEAR=2025
+DATA_PATH="../data"
+
 # Color definitions
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -205,9 +208,7 @@ navigate_main_menu() {
     "ENTER")
       selected_option="${main_menu_options[$main_current_selection]}"
       if [ "$selected_option" = "Initialize" ]; then
-        year=2025
-        data_path="../data"
-        run_if_backend_running "curl -X POST localhost:$port_number/initialize -d year=$year -d data_path=$data_path"
+        run_if_backend_running "curl -X POST localhost:$port_number/initialize -d year=$YEAR -d data_path=$DATA_PATH"
       elif [ "$selected_option" = "Dashboard Status" ]; then
         display_dashboard
       elif [ "$selected_option" = "Settings" ]; then

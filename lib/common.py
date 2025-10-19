@@ -74,6 +74,21 @@ def load_data(typedata : str, path : Path, YEAR : int):
         df_year.set_index('Date',inplace=True)
         return df_year
 
+def found_cache_files(cache_dir : str, symbol, currency):
+    try:
+        cache_path = Path(cache_dir)
+        
+        # Check if directory exists and is accessible
+        if not cache_path.exists():
+            return False
+        if not cache_path.is_dir():
+            return False
+            
+        file_to_check = cache_path / f"cache_{symbol}-{currency}.csv"
+        return file_to_check.exists() and file_to_check.is_file()
+        
+    except (OSError, PermissionError):
+        return False
 
 
 # -------------- PRETTY PRINTS --------------------

@@ -54,7 +54,8 @@ class DeepManager:
 
 # Initialize flask app and wrapper
 app = Flask(__name__)
-deepManager = DeepManager()
+deepManager = DeepManager() # init wrapper with year and data_path
+
 
 @app.route("/", methods=['GET'])
 def root():

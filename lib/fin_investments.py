@@ -221,15 +221,15 @@ class FinInvestments:
 
         currency = "EUR"
         assets_current_day = dict()
+        cache_dir = f"{self.path}/cache"
         for asset_class in current_holdings.keys():
             assets_per_class = dict()
             for symbol in current_holdings[asset_class].keys():
                 print(f"Getting {symbol} today {currency} price...")
                 if asset_class == "Cryptocurrencies":
-                    asset_today = FinFetch.fetch_crypto_data_today(symbol, currency)
+                    asset_today = FinFetch.fetch_crypto_data_today(cache_dir, symbol, currency)
                 elif asset_class == "ETFs":
-                    asset_today = FinFetch.fetch_etf_data_today(symbol, currency)
-                time.sleep(random.uniform(5,7)) # sleep for preventing status resp 500 (ip addres based limitation)
+                    asset_today = FinFetch.fetch_etf_data_today(cache_dir, symbol, currency)
                 
                 prev_month_close = float(assets_monthlyized[asset_class][symbol].iloc[-1].Close)
                 asset_today["Returns"] = (asset_today["Close"] - prev_month_close )/ asset_today["Close"]
