@@ -213,26 +213,164 @@ navigate_database_menu() {
       elif [ "$selected_option" = "Delete Data" ]; then
         run_if_backend_running "delete_data $port_number"
       elif [ "$selected_option" = "View Database" ]; then
-        clear
-        if ! backend_running; then
-          printf "  ${RED}Backend is not running. Please start it first.${NC}\n"
-          printf "  ${YELLOW}Press any key to continue...${NC}\n"
-          read -n 1
-        else
-          printf "  ${YELLOW}Enter data type (cashflow/investments): ${NC}"
-          read -r data_type
-          printf "  ${YELLOW}Enter year (e.g., 2025): ${NC}"
-          read -r year
-          printf "  ${YELLOW}Enter month (1-12): ${NC}"
-          read -r month
-          response=$(curl -s "localhost:$port_number/view_database?data_type=${data_type}&year=${year}&month=${month}")
-          # Use echo instead of printf to avoid format character issues with pipe symbols
-          echo -e "\n${response}\n"
-          printf "  ${YELLOW}Press any key to continue...${NC}\n"
-          read -n 1
-        fi
+        view_database_interactive
       fi
       ;;
+    esac
+  done
+}
+
+view_database_interactive() {
+  if ! backend_running; then
+    clear
+    printf "  ${RED}Backend is not running. Please start it first.${NC}\n"
+    printf "  ${YELLOW}Press any key to continue...${NC}\n"
+    read -n 1
+    return
+  fi
+  
+  # Default values
+  local data_types=("cashflow" "investments")
+  local current_data_type_index=0
+  local data_type="${data_types[$current_data_type_index]}"
+  
+  # Get current year and month
+  local current_year=$(date +%Y)
+  local current_month=$(date +%m | sed 's/^0//')  # Remove leading zero
+  local years=("2023" "2024" "2025" "2026" "2027")
+  local current_year_index=2  # Default to 2025, adjust if needed
+  for i in "${!years[@]}"; do
+    if [ "${years[$i]}" = "$current_year" ]; then
+      current_year_index=$i
+      break
+    fi
+  done
+  local year="${years[$current_year_index]}"
+  
+  local months=("1" "2" "3" "4" "5" "6" "7" "8" "9" "10" "11" "12")
+  local month_names=("January" "February" "March" "April" "May" "June" "July" "August" "September" "October" "November" "December")
+  local current_month_index=$((current_month - 1))
+  local month="${months[$current_month_index]}"
+  
+  local current_field=1  # 1=data_type, 2=year, 3=month
+  
+  # Function to fetch and display database
+  fetch_and_display() {
+    local dt="$1"
+    local yr="$2"
+    local mo="$3"
+    local response=$(curl -s "localhost:$port_number/view_database?data_type=${dt}&year=${yr}&month=${mo}")
+    
+    clear
+    printf "  ${YELLOW}View Database${NC}\n"
+    printf "  ${CYAN}=============${NC}\n\n"
+    
+    # Display selection fields
+    if [ $current_field -eq 1 ]; then
+      printf "  ${BOLD}${CYAN}▶ Data Type: ${data_type}${NC}\n"
+    else
+      printf "  ${GREEN}  Data Type: ${data_type}${NC}\n"
+    fi
+    
+    if [ $current_field -eq 2 ]; then
+      printf "  ${BOLD}${CYAN}▶ Year: ${year}${NC}\n"
+    else
+      printf "  ${GREEN}  Year: ${year}${NC}\n"
+    fi
+    
+    if [ $current_field -eq 3 ]; then
+      printf "  ${BOLD}${CYAN}▶ Month: ${month_names[$current_month_index]} (${month})${NC}\n"
+    else
+      printf "  ${GREEN}  Month: ${month_names[$current_month_index]} (${month})${NC}\n"
+    fi
+    
+    printf "\n  ${YELLOW}Use ↑↓ to navigate fields, ←→ to change values, 'q' to quit${NC}\n"
+    printf "  ${RED}────────────────────────────────────────────────${NC}\n\n"
+    
+    # Display table
+    if echo "$response" | grep -q "Error"; then
+      printf "  ${RED}${response}${NC}\n"
+    else
+      echo -e "${response}"
+    fi
+  }
+  
+  # Initial display
+  fetch_and_display "$data_type" "$year" "$month"
+  
+  while true; do
+    key=$(read_key)
+    
+    case $key in
+      "UP")
+        if [ $current_field -gt 1 ]; then
+          ((current_field--))
+        else
+          current_field=3
+        fi
+        fetch_and_display "$data_type" "$year" "$month"
+        ;;
+      "DOWN")
+        if [ $current_field -lt 3 ]; then
+          ((current_field++))
+        else
+          current_field=1
+        fi
+        fetch_and_display "$data_type" "$year" "$month"
+        ;;
+      "LEFT")
+        case $current_field in
+          1) # Data type
+            if [ $current_data_type_index -gt 0 ]; then
+              ((current_data_type_index--))
+              data_type="${data_types[$current_data_type_index]}"
+              fetch_and_display "$data_type" "$year" "$month"
+            fi
+            ;;
+          2) # Year
+            if [ $current_year_index -gt 0 ]; then
+              ((current_year_index--))
+              year="${years[$current_year_index]}"
+              fetch_and_display "$data_type" "$year" "$month"
+            fi
+            ;;
+          3) # Month
+            if [ $current_month_index -gt 0 ]; then
+              ((current_month_index--))
+              month="${months[$current_month_index]}"
+              fetch_and_display "$data_type" "$year" "$month"
+            fi
+            ;;
+        esac
+        ;;
+      "RIGHT")
+        case $current_field in
+          1) # Data type
+            if [ $current_data_type_index -lt $((${#data_types[@]} - 1)) ]; then
+              ((current_data_type_index++))
+              data_type="${data_types[$current_data_type_index]}"
+              fetch_and_display "$data_type" "$year" "$month"
+            fi
+            ;;
+          2) # Year
+            if [ $current_year_index -lt $((${#years[@]} - 1)) ]; then
+              ((current_year_index++))
+              year="${years[$current_year_index]}"
+              fetch_and_display "$data_type" "$year" "$month"
+            fi
+            ;;
+          3) # Month
+            if [ $current_month_index -lt $((${#months[@]} - 1)) ]; then
+              ((current_month_index++))
+              month="${months[$current_month_index]}"
+              fetch_and_display "$data_type" "$year" "$month"
+            fi
+            ;;
+        esac
+        ;;
+      "QUIT")
+        return
+        ;;
     esac
   done
 }
