@@ -80,19 +80,50 @@ add_data() {
     return 1
   fi
   
-  # Load categories from config
+  # Load config
   if [ ! -f "config.json" ]; then
     printf "  ${RED}Error: config.json not found${NC}\n"
     return 1
   fi
   
-  categories=($(jq -r '.Category[]' config.json))
-  coins=($(jq -r '.Coin[]' config.json))
-  
   # Data type selection
   local data_types=("cashflow" "investments")
   local current_data_type_index=0
   local data_type="${data_types[$current_data_type_index]}"
+  
+  # Function to load categories based on data_type
+  load_categories() {
+    categories=($(jq -r ".${data_type}.Category[]" config.json))
+    if [ ${#categories[@]} -gt 0 ]; then
+      category="${categories[0]}"
+      current_category_index=0
+    else
+      category=""
+      current_category_index=0
+    fi
+  }
+  
+  # Function to load coins (only for cashflow)
+  load_coins() {
+    if [ "$data_type" = "cashflow" ]; then
+      coins=($(jq -r '.cashflow.Coin[]' config.json))
+      if [ ${#coins[@]} -gt 0 ]; then
+        coin="${coins[0]}"
+        current_coin_index=0
+      else
+        coin=""
+        current_coin_index=0
+      fi
+    else
+      coins=()
+      coin=""
+      current_coin_index=0
+    fi
+  }
+  
+  # Load initial categories and coins
+  load_categories
+  load_coins
   
   # Year selection
   local current_year=$(date +%Y)
@@ -131,8 +162,8 @@ add_data() {
   
   # Function to load subcategories for current category
   load_subcategories() {
-    subcategories=($(curl -s "localhost:${port}/get_subcategories?category=$category" | tr ',' ' '))
-    if [ ${#subcategories[@]} -gt 0 ]; then
+    subcategories=($(curl -s "localhost:${port}/get_subcategories?category=$category&data_type=${data_type}" | tr ',' ' '))
+    if [ ${#subcategories[@]} -gt 0 ] && [ -n "${subcategories[0]}" ]; then
       subcategory="${subcategories[0]}"
       current_subcategory_index=0
     else
@@ -201,9 +232,17 @@ add_data() {
     fi
     
     if [ $current_field -eq 8 ]; then
-      printf "  ${BOLD}${CYAN}▶ Subcategory: ${subcategory}${NC}\n"
+      if [ -n "$subcategory" ]; then
+        printf "  ${BOLD}${CYAN}▶ Subcategory: ${subcategory}${NC}\n"
+      else
+        printf "  ${BOLD}${CYAN}▶ Subcategory: (none)${NC}\n"
+      fi
     else
-      printf "  ${GREEN}  Subcategory: ${subcategory}${NC}\n"
+      if [ -n "$subcategory" ]; then
+        printf "  ${GREEN}  Subcategory: ${subcategory}${NC}\n"
+      else
+        printf "  ${GREEN}  Subcategory: (none)${NC}\n"
+      fi
     fi
     
     if [ $current_field -eq 9 ]; then
@@ -238,12 +277,18 @@ add_data() {
             if [ $current_data_type_index -gt 0 ]; then
               ((current_data_type_index--))
               data_type="${data_types[$current_data_type_index]}"
+              load_categories
+              load_coins
+              load_subcategories
             fi
             ;;
           2) # Year
             if [ $current_year_index -gt 0 ]; then
               ((current_year_index--))
             fi
+            ;;
+          3) # Date - decrement day
+            date=$(date -d "$date -1 day" +%Y-%m-%d 2>/dev/null || date -v-1d -j -f "%Y-%m-%d" "$date" +%Y-%m-%d 2>/dev/null || echo "$date")
             ;;
           4) # Type
             if [ $current_type_index -gt 0 ]; then
@@ -267,7 +312,7 @@ add_data() {
             fi
             ;;
           8) # Subcategory
-            if [ $current_subcategory_index -gt 0 ]; then
+            if [ ${#subcategories[@]} -gt 0 ] && [ $current_subcategory_index -gt 0 ]; then
               ((current_subcategory_index--))
               subcategory="${subcategories[$current_subcategory_index]}"
             fi
@@ -280,12 +325,18 @@ add_data() {
             if [ $current_data_type_index -lt $((${#data_types[@]} - 1)) ]; then
               ((current_data_type_index++))
               data_type="${data_types[$current_data_type_index]}"
+              load_categories
+              load_coins
+              load_subcategories
             fi
             ;;
           2) # Year
             if [ $current_year_index -lt $((${#years[@]} - 1)) ]; then
               ((current_year_index++))
             fi
+            ;;
+          3) # Date - increment day
+            date=$(date -d "$date +1 day" +%Y-%m-%d 2>/dev/null || date -v+1d -j -f "%Y-%m-%d" "$date" +%Y-%m-%d 2>/dev/null || echo "$date")
             ;;
           4) # Type
             if [ $current_type_index -lt $((${#types[@]} - 1)) ]; then
@@ -309,7 +360,7 @@ add_data() {
             fi
             ;;
           8) # Subcategory
-            if [ $current_subcategory_index -lt $((${#subcategories[@]} - 1)) ]; then
+            if [ ${#subcategories[@]} -gt 0 ] && [ $current_subcategory_index -lt $((${#subcategories[@]} - 1)) ]; then
               ((current_subcategory_index++))
               subcategory="${subcategories[$current_subcategory_index]}"
             fi

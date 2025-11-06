@@ -1,23 +1,34 @@
 {
-  "columns": ["Date", "Type", "Coin", "Qty", "Category", "Subcategory", "Description"],
-  "Category": ["Transfer", "Subs", "Groceries", "Health", "Leisure", "Transport", "Shop", "Bills", "Other", "Family", "Holiday", "Gift", "Car", "Financial", "Income", "Employement"],
-  "Subcategory": {
-    "Transfer": ["ToBBVA","ToRevolut","ToDirecta","ToING","ToINGCD","ToHype","ToBitget","ToCash","Invest","FromBBVA","FromRevolut","FromDirecta","FromBitget","FromING","FromINGCD","FromHype"],
-    "Subs": ["Bank", "VPS", "SIM", "VPN", "Amazon"],
-    "Groceries": ["Diet", "Food","Supplements"],
-    "Health": ["Gym", "Hygiene", "Eyes", "Visit"],
-    "Leisure": ["Food", "Drink", "Events", "Restaurant", "Games", "Karma", "Party", "Family", "Coffee"],
-    "Transport": ["Bicycle", "Gasoline", "Train"],
-    "Shop": ["Accessories", "Clothes"],
-    "Bills": ["Wood", "Water", "Electricity"],
-    "Other": ["Papers", "Gifts", "Fines", "Taxes"],
-    "Family": ["Food", "Favors", "Groceries", "Accessories", "Karma", "Favor"],
-    "Holiday": ["Rent", "Transport", "Drink", "Shop", "Food", "Restaurant", "Gift", "Party", "Tassa", "Groceries"],
-    "Gift": ["Karma"],
-    "Car": ["Buy", "Papers", "RCA", "Gasoline"],
-    "Financial": ["Untaxable"],
-    "Income": ["Cashback","Goodselling"],
-    "Employement": ["Salary"]
+  "cashflow": {
+    "columns": ["Date", "Type", "Coin", "Qty", "Category", "Subcategory", "Description"],
+    "Category": ["Transfer", "Subs", "Groceries", "Health", "Leisure", "Transport", "Shop", "Bills", "Other", "Family", "Holiday", "Gift", "Car", "Financial", "Income", "Employement"],
+    "Subcategory": {
+      "Transfer": ["ToBBVA","ToRevolut","ToDirecta","ToING","ToINGCD","ToHype","ToBitget","ToCash","Invest","FromBBVA","FromRevolut","FromDirecta","FromBitget","FromING","FromINGCD","FromHype"],
+      "Subs": ["Bank", "VPS", "SIM", "VPN", "Amazon"],
+      "Groceries": ["Diet", "Food","Supplements"],
+      "Health": ["Gym", "Hygiene", "Eyes", "Visit"],
+      "Leisure": ["Food", "Drink", "Events", "Restaurant", "Games", "Karma", "Party", "Family", "Coffee"],
+      "Transport": ["Bicycle", "Gasoline", "Train"],
+      "Shop": ["Accessories", "Clothes"],
+      "Bills": ["Wood", "Water", "Electricity"],
+      "Other": ["Papers", "Gifts", "Fines", "Taxes"],
+      "Family": ["Food", "Favors", "Groceries", "Accessories", "Karma", "Favor"],
+      "Holiday": ["Rent", "Transport", "Drink", "Shop", "Food", "Restaurant", "Gift", "Party", "Tassa", "Groceries"],
+      "Gift": ["Karma"],
+      "Car": ["Buy", "Papers", "RCA", "Gasoline"],
+      "Financial": ["Untaxable"],
+      "Income": ["Cashback","Goodselling"],
+      "Employement": ["Salary"]
+    },
+    "Coin": ["EUR", "USD"]
   },
-  "Coin": ["EUR", "USD"]
+  "investments": {
+    "columns": ["Date", "Type", "Symbol", "Qty", "Category", "Subcategory", "Description"],
+    "Category": ["State", "Sell", "Buy"],
+    "Subcategory": {
+      "State": ["Holdings"],
+      "Buy": ["Holdings", "Swap"],
+      "Sell": ["Holdins", "Swap"]
+    }
+  }
 }

@@ -99,20 +99,28 @@ def validate_data(data_type, category, subcategory, coin=None, symbol=None):
     if config is None:
         return False, "Config file not found"
     
+    # Get the appropriate section based on data_type
+    if data_type not in ["cashflow", "investments"]:
+        return False, f"Invalid data_type: {data_type}. Must be 'cashflow' or 'investments'"
+    
+    data_config = config.get(data_type, {})
+    if not data_config:
+        return False, f"Config section for {data_type} not found"
+    
     # Validate category
-    valid_categories = config.get("Category", [])
+    valid_categories = data_config.get("Category", [])
     if category not in valid_categories:
         return False, f"Invalid category. Must be one of {valid_categories}"
     
     # Validate subcategory
-    subcategories = config.get("Subcategory", {})
+    subcategories = data_config.get("Subcategory", {})
     if category in subcategories:
         if subcategory not in subcategories[category]:
             return False, f"Invalid subcategory for {category}. Must be one of {subcategories[category]}"
     
     # Validate coin (for cashflow)
     if data_type == "cashflow" and coin is not None:
-        valid_coins = config.get("Coin", [])
+        valid_coins = data_config.get("Coin", [])
         if coin not in valid_coins:
             return False, f"Invalid coin. Must be one of {valid_coins}"
     
@@ -376,12 +384,19 @@ def get_subcategories():
     """Get subcategories for a category"""
     try:
         category = request.args.get('category')
+        data_type = request.args.get('data_type', 'cashflow')  # Default to cashflow for backward compatibility
+        
         config = load_config()
         
         if config is None:
             return ""
         
-        subcategories = config.get("Subcategory", {})
+        # Get the appropriate section based on data_type
+        if data_type not in ["cashflow", "investments"]:
+            return ""
+        
+        data_config = config.get(data_type, {})
+        subcategories = data_config.get("Subcategory", {})
         
         if category in subcategories:
             return ','.join(subcategories[category])
