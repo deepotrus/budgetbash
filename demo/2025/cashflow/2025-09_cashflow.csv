@@ -1,0 +1,13 @@
+Date      ,Type,Coin,Qty      ,Category   ,Subcategory,Description
+2025-09-01,Hype,EUR ,+2119    ,Employement,Salary     ,Monthly salary
+2025-09-04,BBVA,EUR ,-89.50   ,Groceries  ,Diet       ,Weekly groceries
+2025-09-11,BBVA,EUR ,-92.80   ,Groceries  ,Diet       ,Weekly groceries
+2025-09-18,BBVA,EUR ,-88.20   ,Groceries  ,Diet       ,Weekly groceries
+2025-09-25,BBVA,EUR ,-90.60   ,Groceries  ,Diet       ,Weekly groceries
+2025-09-06,Revolut,EUR,-20.00 ,Leisure    ,Food       ,Lunch
+2025-09-13,Revolut,EUR,-32.00 ,Leisure    ,Restaurant ,Dinner
+2025-09-20,Revolut,EUR,-16.00 ,Leisure    ,Coffee     ,Coffee
+2025-09-27,Revolut,EUR,-40.00 ,Leisure    ,Events     ,Theater
+2025-09-08,Hype,EUR ,-65.00   ,Health     ,Gym        ,Gym membership
+2025-09-15,Hype,EUR ,-18.00   ,Transport  ,Train      ,Train ticket
+

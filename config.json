@@ -10,7 +10,7 @@
       "Leisure": ["Food", "Drink", "Events", "Restaurant", "Games", "Karma", "Party", "Family", "Coffee"],
       "Transport": ["Bicycle", "Gasoline", "Train"],
       "Shop": ["Accessories", "Clothes"],
-      "Bills": ["Wood", "Water", "Electricity"],
+      "Bills": ["Wood", "Water", "Electricity", "Gas", "Rubbish"],
       "Other": ["Papers", "Gifts", "Fines", "Taxes"],
       "Family": ["Food", "Favors", "Groceries", "Accessories", "Karma", "Favor"],
       "Holiday": ["Rent", "Transport", "Drink", "Shop", "Food", "Restaurant", "Gift", "Party", "Tassa", "Groceries"],

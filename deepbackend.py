@@ -88,6 +88,8 @@ def get_csv_path(data_type, year, month, data_path=None):
 def determine_month_from_date(date_str):
     """Extract month from date string (YYYY-MM-DD format)"""
     try:
+        # Strip whitespace from date string
+        date_str = date_str.strip()
         date_obj = datetime.strptime(date_str, "%Y-%m-%d")
         return date_obj.month
     except ValueError:
@@ -251,13 +253,16 @@ def add_data():
         if csv_file.exists():
             df = pd.read_csv(csv_path, skipinitialspace=True, na_filter=False)
             df.columns = df.columns.str.strip()
+            # Strip whitespace from Date column if it exists
+            if 'Date' in df.columns:
+                df['Date'] = df['Date'].astype(str).str.strip()
+            # Append new row
+            df = pd.concat([df, pd.DataFrame([new_row])], ignore_index=True)
         else:
             # Create directory if it doesn't exist
             csv_file.parent.mkdir(parents=True, exist_ok=True)
-            df = pd.DataFrame(columns=columns)
-        
-        # Append new row
-        df = pd.concat([df, pd.DataFrame([new_row])], ignore_index=True)
+            # For new file, create DataFrame directly with the new row
+            df = pd.DataFrame([new_row])
         
         # Save to CSV
         df.to_csv(csv_path, index=False)
@@ -284,10 +289,13 @@ def delete_row():
         # Load CSV
         df = pd.read_csv(csv_path, skipinitialspace=True, na_filter=False)
         df.columns = df.columns.str.strip()
+        # Strip whitespace from Date column if it exists
+        if 'Date' in df.columns:
+            df['Date'] = df['Date'].astype(str).str.strip()
         
         if line_number < 0 or line_number >= len(df):
             return "Error: Invalid line number"
-        
+            
         # Get row data before deleting for confirmation
         row_data = df.iloc[line_number]
         
@@ -316,6 +324,9 @@ def view_database():
         # Load CSV
         df = pd.read_csv(csv_path, skipinitialspace=True, na_filter=False)
         df.columns = df.columns.str.strip()
+        # Strip whitespace from Date column if it exists
+        if 'Date' in df.columns:
+            df['Date'] = df['Date'].astype(str).str.strip()
         
         if df.empty:
             return "Database is empty"
@@ -344,6 +355,9 @@ def get_row_data():
         # Load CSV
         df = pd.read_csv(csv_path, skipinitialspace=True, na_filter=False)
         df.columns = df.columns.str.strip()
+        # Strip whitespace from Date column if it exists
+        if 'Date' in df.columns:
+            df['Date'] = df['Date'].astype(str).str.strip()
         
         if line_number < 0 or line_number >= len(df):
             return "Error: Invalid line number"

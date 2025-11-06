@@ -1,0 +1,16 @@
+Date      ,Type,Coin,Qty      ,Category   ,Subcategory,Description
+2025-12-01,Hype,EUR ,+2119    ,Employement,Salary     ,Monthly salary
+2025-12-04,BBVA,EUR ,-95.60   ,Groceries  ,Diet       ,Weekly groceries
+2025-12-11,BBVA,EUR ,-98.20   ,Groceries  ,Diet       ,Weekly groceries
+2025-12-18,BBVA,EUR ,-102.40  ,Groceries  ,Diet       ,Holiday groceries
+2025-12-25,BBVA,EUR ,-88.80   ,Groceries  ,Diet       ,Weekly groceries
+2025-12-06,Revolut,EUR,-28.00 ,Leisure    ,Food       ,Lunch
+2025-12-13,Revolut,EUR,-45.00 ,Leisure    ,Restaurant ,Dinner
+2025-12-20,Revolut,EUR,-22.00 ,Leisure    ,Coffee     ,Coffee
+2025-12-24,Revolut,EUR,-150.00,Gift       ,Karma      ,Christmas gifts
+2025-12-27,Revolut,EUR,-80.00 ,Holiday    ,Food       ,Holiday meals
+2025-12-08,Hype,EUR ,-200.00  ,Holiday    ,Rent       ,Holiday accommodation
+2025-12-15,Hype,EUR ,-120.00  ,Holiday    ,Transport  ,Holiday travel
+2025-12-22,Hype,EUR ,-90.00   ,Bills      ,Electricity,Electricity bill
+2025-12-29,Hype,EUR ,-15.00   ,Transport  ,Train      ,Train ticket
+

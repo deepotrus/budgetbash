@@ -1,1 +1,13 @@
 Date      ,Type,Coin,Qty      ,Category   ,Subcategory,Description
+2025-07-01,Hype,EUR ,+2119    ,Employement,Salary     ,Monthly salary
+2025-07-04,BBVA,EUR ,-95.20   ,Groceries  ,Diet       ,Weekly groceries
+2025-07-11,BBVA,EUR ,-89.80   ,Groceries  ,Diet       ,Weekly groceries
+2025-07-18,BBVA,EUR ,-91.50   ,Groceries  ,Diet       ,Weekly groceries
+2025-07-25,BBVA,EUR ,-88.90   ,Groceries  ,Diet       ,Weekly groceries
+2025-07-06,Revolut,EUR,-25.00 ,Leisure    ,Food       ,Lunch
+2025-07-13,Revolut,EUR,-35.00 ,Leisure    ,Restaurant ,Dinner
+2025-07-20,Revolut,EUR,-20.00 ,Leisure    ,Coffee     ,Coffee
+2025-07-27,Revolut,EUR,-60.00 ,Leisure    ,Events     ,Concert
+2025-07-09,Hype,EUR ,-150.00  ,Holiday    ,Transport  ,Vacation travel
+2025-07-15,Hype,EUR ,-200.00  ,Holiday    ,Rent       ,Vacation accommodation
+2025-07-22,Hype,EUR ,-120.00  ,Holiday    ,Food       ,Vacation meals

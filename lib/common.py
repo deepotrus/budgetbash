@@ -55,6 +55,9 @@ def load_data(typedata : str, path : Path, YEAR : int):
                 filepath = f"{path}/{YEAR}/{typedata}/{YEAR}-{i:0=2}_{typedata}.csv"
                 df = pd.read_csv(filepath, skipinitialspace=True, na_filter=False)
                 df.columns = df.columns.str.strip() # remove whitespaces from columns
+                # Strip whitespace from Date column
+                if 'Date' in df.columns:
+                    df['Date'] = df['Date'].astype(str).str.strip()
                 df.Category = df.Category.str.strip()
                 df.Subcategory = df.Subcategory.str.strip()
                 df.Type = df.Type.str.strip()

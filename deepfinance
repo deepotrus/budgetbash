@@ -398,20 +398,25 @@ display_dashboard() {
     local nwch=$(echo "$response" | jq -r '.nwch')
     local pct_ch=$(echo "$response" | jq -r '.pct_ch')
     
-    # Format numbers (remove decimals if .00)
-    liquidity=$(printf "%.2f" "$liquidity" | sed 's/\.00$//')
-    investments=$(printf "%.2f" "$investments" | sed 's/\.00$//')
-    networth=$(printf "%.2f" "$networth" | sed 's/\.00$//')
-    nwch=$(printf "%.2f" "$nwch" | sed 's/\.00$//')
-    pct_ch=$(printf "%.2f" "$pct_ch" | sed 's/\.00$//')
-
-    # Create dashboard
+    # Format numbers (remove .00 if present)
+    local networth_str=$(printf "%.2f" "$networth" | sed 's/\.00$//')
+    local liquidity_str=$(printf "%.2f" "$liquidity" | sed 's/\.00$//')
+    local investments_str=$(printf "%.2f" "$investments" | sed 's/\.00$//')
+    local nwch_str=$(printf "%.2f" "$nwch" | sed 's/\.00$//')
+    local pct_ch_str=$(printf "%.2f" "$pct_ch" | sed 's/\.00$//')
+    
+    # Find the longest label to determine center alignment
+    local max_label_len=20  # "Percentage Change: " is the longest
+    
+    # Create dashboard with centered layout
     printf "  ${RED}┌─ DeepFinance Dashboard ─────────────────┐${NC}\n"
-    printf "  ${RED}│${NC} ${YELLOW}Net Worth:${NC} ${GREEN}€%s${NC} %*s ${RED}│${NC}\n" "$networth" $((25-${#networth})) ""
-    printf "  ${RED}│${NC} ${YELLOW}Liquidity:${NC} ${BLUE}€%s${NC} %*s ${RED}│${NC}\n" "$liquidity" $((25-${#liquidity})) ""
-    printf "  ${RED}│${NC} ${YELLOW}Investments:${NC} ${CYAN}€%s${NC} %*s ${RED}│${NC}\n" "$investments" $((25-${#investments})) ""
-    printf "  ${RED}│${NC} ${YELLOW}Net Worth Change:${NC} ${CYAN}€%s${NC} %*s ${RED}│${NC}\n" "$nwch" $((25-${#nwch})) ""
-    printf "  ${RED}│${NC} ${YELLOW}Percentage Change:${NC} ${CYAN}%s%%${NC} %*s ${RED}│${NC}\n" "$pct_ch" $((25-${#pct_ch})) ""
+    printf "\n"
+    printf "  ${YELLOW}Net Worth:${NC} ${GREEN}€%s${NC}\n" "$networth_str"
+    printf "  ${YELLOW}Liquidity:${NC} ${BLUE}€%s${NC}\n" "$liquidity_str"
+    printf "  ${YELLOW}Investments:${NC} ${CYAN}€%s${NC}\n" "$investments_str"
+    printf "  ${YELLOW}Net Worth Change:${NC} ${CYAN}€%s${NC}\n" "$nwch_str"
+    printf "  ${YELLOW}Percentage Change:${NC} ${CYAN}%s%%${NC}\n" "$pct_ch_str"
+    printf "\n"
     printf "  ${RED}└────────────────────────────────────────┘${NC}\n"
     
     printf "\n  ${YELLOW}Press any key to continue...${NC}\n"
@@ -464,9 +469,9 @@ navigate_main_menu() {
             -d "year=$YEAR&data_path=$DATA_PATH")
           
           if echo "$response" | grep -q "Error"; then
-            printf "\n  ${RED}${response}${NC}\n"
+            printf "\n  ${RED}%s${NC}\n" "$response"
           else
-            printf "\n  ${GREEN}${response}${NC}\n"
+            printf "\n  ${GREEN}%s${NC}\n" "$response"
           fi
           printf "  ${YELLOW}Press any key to continue...${NC}\n"
           read -n 1

@@ -1,36 +1,20 @@
 ### A Terminal Based application for handling your finances!
-This Python suite was created by me for personal use with the goal to control my finances without relying on any third party tools like office of spreadsheets. Also the application is terminal based for simplicity and practical reasons since literally no GUI libraries are needed (being frugal not only in finances, but also in coding).
+This Python suite was created by me for personal use with the goal to control my finances without relying on any third party tools like office of spreadsheets. Also the application is terminal based for simplicity and practical reasons since literally no GUI libraries are needed (being frugal not only in finances, but also in coding). The goal of this application if to provide a nice terminal flow in handling your finances by navigating a TUI frontend writtend in bash, where menu options call endpoints of a python flask backend. The motivation of this approach is that using bash script for TUI is natively supported in unix.
 
-### Install Python Dependencies
-Create a python environment and install requirements with pip3
+### Run the application!
+After activating a python environment and having installed dependencies (which i do not know what are, ehm flask, sys, os, json, pathlib, datetime, csv, ...):
 ```shell
-    $ python3 -m venv .fin
-    $ source .fin/bin/activate
-    $ pip3 install -r requirements.txt
+    $ ./deepfinance
 ```
-
-### Run the tty application!
-After activating the python environment and having installed Dependencies:
-```shell
-    $ cd app
-    $ python3 app-tty.py
-```
-
-### Demo data for code testing
-I added a directory with demo data so that everyone can get started without having to create a database from zero just to see the thing running. To enable it:
-```shell
-    CMD> demo
-    CMD> cmd 2025
-```
-At this point a subconsole opens loading data from demo/2025. Some commands for viewing networth and expenses are:
-```shell
-    CMD 2025> nwstatus
-    CMD 2025> expenses january
-```
-In the current status it is possible to add data to the csv database with a tui console.
-```shell
-    CMD 2025> append january
-```
+Navigate through the menu and make sure to try the demo data!
 
 ### Future work and improvements
-The application can be improved by adding commands on subconsoles, removing hardcoded categories making the app more flexible to individual users, and finally handling better the investment codebase part with user agents for fetching current asset prices.
+At the current state, the application has database operations: view, add, delete. Also implements a cache directory for temporary market data for portfolio calculations.
+
+Next work includes:
+  - Better visuals for cashflow expenses
+  - Add networth history in the current year
+  - Handle old plot files
+
+Future work:
+  - Less hardcoding in config.json, allow user to choose its bank (configuration accounts)
