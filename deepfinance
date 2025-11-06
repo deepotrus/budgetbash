@@ -14,11 +14,14 @@ CYAN='\033[0;36m'
 BOLD='\033[1m'
 NC='\033[0m' # No Color
 
-main_menu_options=("Initialize" "Dashboard Status" "Settings" "Quit")
+main_menu_options=("Initialize Database" "Dashboard Status" "Database Operations" "Settings" "Quit")
 main_current_selection=0
 
 settings_menu_options=("Start Backend" "Stop Backend" "Set Port" "Set Demo" "Back")
 settings_current_selection=0
+
+database_menu_options=("Add Data" "Delete Data" "View Database" "Back")
+database_current_selection=0
 
 # Function to display the main menu
 display_main_menu() {
@@ -97,6 +100,23 @@ display_settings_menu() {
   echo -e "  ${YELLOW}Use ↑↓ arrows to navigate, Enter to select${NC}"
 }
 
+# Function to display the database operations submenu
+display_database_menu() {
+  clear
+  echo -e "  ${RED}~~~~ ${NC}${YELLOW}Database Operations${NC}${RED} ~~~~${NC}"
+
+  for i in "${!database_menu_options[@]}"; do
+    if [ $i -eq $database_current_selection ]; then
+      echo -e "  ${BOLD}${CYAN}▶ ${database_menu_options[$i]}${NC}"
+    else
+      echo -e "  ${GREEN}  ${database_menu_options[$i]}${NC}"
+    fi
+  done
+
+  echo -e "  ${RED}~~~~~~~~~~~~~~~~~~~~~~~~${NC}"
+  echo -e "  ${YELLOW}Use ↑↓ arrows to navigate, Enter to select${NC}"
+}
+
 
 navigate_settings_menu() {
   while true; do
@@ -137,9 +157,80 @@ navigate_settings_menu() {
       elif [ "$selected_option" = "Stop Backend" ]; then
         run_if_backend_running "curl -X GET localhost:$port_number/shutdown"
       elif [ "$selected_option" = "Set Port" ]; then
-        printf "Not implemented yet...\n"
+        clear
+        printf "  ${YELLOW}Enter port number (current: $port_number): ${NC}"
+        read -r new_port
+        if [[ "$new_port" =~ ^[0-9]+$ ]]; then
+          port_number=$new_port
+          printf "  ${GREEN}Port set to $port_number${NC}\n"
+        else
+          printf "  ${RED}Invalid port number${NC}\n"
+        fi
+        printf "  ${YELLOW}Press any key to continue...${NC}\n"
+        read -n 1
       elif [ "$selected_option" = "Set Demo" ]; then
-        printf "Not implemented yet...\n"
+        clear
+        DATA_PATH="./demo"
+        printf "  ${GREEN}Data path set to: $DATA_PATH${NC}\n"
+        printf "  ${YELLOW}Press any key to continue...${NC}\n"
+        read -n 1
+      fi
+      ;;
+    esac
+  done
+}
+
+navigate_database_menu() {
+  # Source database functions
+  source ./db_add
+  source ./db_delete
+  
+  while true; do
+    display_database_menu
+    key=$(read_key)
+
+    case $key in
+    "UP")
+      if [ $database_current_selection -gt 0 ]; then
+        ((database_current_selection--))
+      else
+        database_current_selection=$((${#database_menu_options[@]} - 1))
+      fi
+      ;;
+    "DOWN")
+      if [ $database_current_selection -lt $((${#database_menu_options[@]} - 1)) ]; then
+        ((database_current_selection++))
+      else
+        database_current_selection=0
+      fi
+      ;;
+    "ENTER")
+      selected_option="${database_menu_options[$database_current_selection]}"
+      if [ "$selected_option" = "Back" ]; then
+        return 0
+      elif [ "$selected_option" = "Add Data" ]; then
+        run_if_backend_running "add_data $port_number"
+      elif [ "$selected_option" = "Delete Data" ]; then
+        run_if_backend_running "delete_data $port_number"
+      elif [ "$selected_option" = "View Database" ]; then
+        clear
+        if ! backend_running; then
+          printf "  ${RED}Backend is not running. Please start it first.${NC}\n"
+          printf "  ${YELLOW}Press any key to continue...${NC}\n"
+          read -n 1
+        else
+          printf "  ${YELLOW}Enter data type (cashflow/investments): ${NC}"
+          read -r data_type
+          printf "  ${YELLOW}Enter year (e.g., 2025): ${NC}"
+          read -r year
+          printf "  ${YELLOW}Enter month (1-12): ${NC}"
+          read -r month
+          response=$(curl -s "localhost:$port_number/view_database?data_type=${data_type}&year=${year}&month=${month}")
+          # Use echo instead of printf to avoid format character issues with pipe symbols
+          echo -e "\n${response}\n"
+          printf "  ${YELLOW}Press any key to continue...${NC}\n"
+          read -n 1
+        fi
       fi
       ;;
     esac
@@ -152,8 +243,13 @@ display_dashboard() {
     # Fetch JSON data
     local response=$(curl -s localhost:$port_number/dashboard_status)
     # Check if response contains error
-    if echo "$response" | jq -e '.error' > /dev/null 2>&1; then
-        printf "  ${RED}Error: %s${NC}\n" "$(echo "$response" | jq -r '.error')"
+    local status=$(echo "$response" | jq -r '.status' 2>/dev/null)
+    if [ "$status" = "error" ]; then
+        local error_msg=$(echo "$response" | jq -r '.message' 2>/dev/null)
+        printf "  ${RED}Error: %s${NC}\n" "$error_msg"
+        printf "  ${YELLOW}Make sure the database is initialized first.${NC}\n"
+        printf "\n  ${YELLOW}Press any key to continue...${NC}\n"
+        read -n 1
         return 1
     fi
     
@@ -176,8 +272,8 @@ display_dashboard() {
     printf "  ${RED}│${NC} ${YELLOW}Net Worth:${NC} ${GREEN}€%s${NC} %*s ${RED}│${NC}\n" "$networth" $((25-${#networth})) ""
     printf "  ${RED}│${NC} ${YELLOW}Liquidity:${NC} ${BLUE}€%s${NC} %*s ${RED}│${NC}\n" "$liquidity" $((25-${#liquidity})) ""
     printf "  ${RED}│${NC} ${YELLOW}Investments:${NC} ${CYAN}€%s${NC} %*s ${RED}│${NC}\n" "$investments" $((25-${#investments})) ""
-    printf "  ${RED}│${NC} ${YELLOW}Net Worth Change:${NC} ${MAGENTA}€%s${NC} %*s ${RED}│${NC}\n" "$nwch" $((25-${#nwch})) ""
-    printf "  ${RED}│${NC} ${YELLOW}Percentage Change:${NC} ${MAGENTA}%s%%${NC} %*s ${RED}│${NC}\n" "$pct_ch" $((25-${#pct_ch})) ""
+    printf "  ${RED}│${NC} ${YELLOW}Net Worth Change:${NC} ${CYAN}€%s${NC} %*s ${RED}│${NC}\n" "$nwch" $((25-${#nwch})) ""
+    printf "  ${RED}│${NC} ${YELLOW}Percentage Change:${NC} ${CYAN}%s%%${NC} %*s ${RED}│${NC}\n" "$pct_ch" $((25-${#pct_ch})) ""
     printf "  ${RED}└────────────────────────────────────────┘${NC}\n"
     
     printf "\n  ${YELLOW}Press any key to continue...${NC}\n"
@@ -207,17 +303,54 @@ navigate_main_menu() {
       ;;
     "ENTER")
       selected_option="${main_menu_options[$main_current_selection]}"
-      if [ "$selected_option" = "Initialize" ]; then
-        run_if_backend_running "curl -X POST localhost:$port_number/initialize -d year=$YEAR -d data_path=$DATA_PATH"
+      if [ "$selected_option" = "Initialize Database" ]; then
+        clear
+        if ! backend_running; then
+          printf "  ${RED}Backend is not running. Please start it from Settings first.${NC}\n"
+          printf "  ${YELLOW}Press any key to continue...${NC}\n"
+          read -n 1
+        else
+          printf "  ${YELLOW}Enter year (e.g., 2025, current: $YEAR): ${NC}"
+          read -r input_year
+          if [ -n "$input_year" ]; then
+            YEAR=$input_year
+          fi
+          
+          printf "  ${YELLOW}Enter data path (e.g., ./demo or ../data, current: $DATA_PATH): ${NC}"
+          read -r input_path
+          if [ -n "$input_path" ]; then
+            DATA_PATH=$input_path
+          fi
+          
+          response=$(curl -s -X POST "localhost:$port_number/initialize" \
+            -d "year=$YEAR&data_path=$DATA_PATH")
+          
+          if echo "$response" | grep -q "Error"; then
+            printf "\n  ${RED}${response}${NC}\n"
+          else
+            printf "\n  ${GREEN}${response}${NC}\n"
+          fi
+          printf "  ${YELLOW}Press any key to continue...${NC}\n"
+          read -n 1
+        fi
       elif [ "$selected_option" = "Dashboard Status" ]; then
-        display_dashboard
+        if ! backend_running; then
+          clear
+          printf "  ${RED}Backend is not running. Please start it from Settings first.${NC}\n"
+          printf "  ${YELLOW}Press any key to continue...${NC}\n"
+          read -n 1
+        else
+          display_dashboard
+        fi
+      elif [ "$selected_option" = "Database Operations" ]; then
+        navigate_database_menu
       elif [ "$selected_option" = "Settings" ]; then
         navigate_settings_menu
       elif [ "$selected_option" = "Quit" ]; then
-        #if backend_running; then
-        #  curl -X GET localhost:$port_number/shutdown
-        #  printf "  ${YELLOW}Backend stopped...${NC}\n"
-        #fi
+        if backend_running; then
+          curl -X GET "localhost:$port_number/shutdown" > /dev/null 2>&1
+          printf "  ${YELLOW}Backend stopped...${NC}\n"
+        fi
         printf "  ${BLUE}Goodbye!${NC}\n"
         exit 0
       fi

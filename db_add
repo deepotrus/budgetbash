@@ -1,0 +1,379 @@
+#!/bin/bash
+
+# Database Add Functions for Deepfinance
+
+# Color definitions
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+CYAN='\033[0;36m'
+BOLD='\033[1m'
+NC='\033[0m' # No Color
+
+# Function to read a single keypress
+read_key() {
+  local key
+  IFS= read -rsn1 key
+  case $key in
+  $'\x1b') # ESC sequence
+    IFS= read -rsn2 key
+    case $key in
+    '[A') echo "UP" ;;
+    '[B') echo "DOWN" ;;
+    '[C') echo "RIGHT" ;;
+    '[D') echo "LEFT" ;;
+    *) echo "UNKNOWN" ;;
+    esac
+    ;;
+  '') echo "ENTER" ;;
+  'q'|'Q') echo "QUIT" ;;
+  *) echo "UNKNOWN" ;;
+  esac
+}
+
+# Function to check if backend is running
+backend_running() {
+  local port="${1:-5000}"
+  if curl -s "localhost:${port}/" > /dev/null 2>&1; then
+    return 0
+  else
+    return 1
+  fi
+}
+
+# Function to submit data to backend
+submit_data() {
+  local data_type="$1"
+  local year="$2"
+  local date="$3"
+  local type_field="$4"
+  local coin_or_symbol="$5"
+  local qty="$6"
+  local category="$7"
+  local subcategory="$8"
+  local description="$9"
+  local port="${10:-5000}"
+  
+  local url="localhost:${port}/add_data"
+  local data="data_type=${data_type}&year=${year}&date=${date}&type=${type_field}&qty=${qty}&category=${category}&subcategory=${subcategory}&description=${description}"
+  
+  if [ "$data_type" = "cashflow" ]; then
+    data="${data}&coin=${coin_or_symbol}"
+  else
+    data="${data}&symbol=${coin_or_symbol}"
+  fi
+  
+  response=$(curl -s -X POST "${url}" -d "${data}")
+  
+  printf "\n  ${GREEN}Response: $response${NC}\n"
+  printf "  ${YELLOW}Press any key to continue...${NC}\n"
+  read -n 1
+}
+
+# Interactive add data function
+add_data() {
+  local port="${1:-5000}"
+  
+  if ! backend_running "$port"; then
+    printf "  ${RED}Backend is not running on port ${port}. Please start it first.${NC}\n"
+    return 1
+  fi
+  
+  # Load categories from config
+  if [ ! -f "config.json" ]; then
+    printf "  ${RED}Error: config.json not found${NC}\n"
+    return 1
+  fi
+  
+  categories=($(jq -r '.Category[]' config.json))
+  coins=($(jq -r '.Coin[]' config.json))
+  
+  # Data type selection
+  local data_types=("cashflow" "investments")
+  local current_data_type_index=0
+  local data_type="${data_types[$current_data_type_index]}"
+  
+  # Year selection
+  local current_year=$(date +%Y)
+  local years=("2023" "2024" "2025" "2026")
+  local current_year_index=2  # Default to 2025
+  
+  # Date input
+  local date_input=""
+  local date=$(date +%Y-%m-%d)
+  
+  # Type (bank/account) - common options
+  local types=("Hype" "BBVA" "Revolut" "Directa" "ING" "INGCD" "Cash" "ETFs" "Cryptocurrencies")
+  local current_type_index=0
+  local type_field="${types[$current_type_index]}"
+  
+  # Coin or Symbol
+  local current_coin_index=0
+  local coin="${coins[$current_coin_index]}"
+  local symbol_input=""
+  
+  # Quantity
+  local qty=0.0
+  local qty_input=""
+  
+  # Category
+  local current_category_index=0
+  local category="${categories[$current_category_index]}"
+  local current_subcategory_index=0
+  local subcategory=""
+  
+  # Description
+  local description=""
+  local description_input=""
+  
+  local current_field=1  # 1=data_type, 2=year, 3=date, 4=type, 5=coin/symbol, 6=qty, 7=category, 8=subcategory, 9=description
+  
+  # Function to load subcategories for current category
+  load_subcategories() {
+    subcategories=($(curl -s "localhost:${port}/get_subcategories?category=$category" | tr ',' ' '))
+    if [ ${#subcategories[@]} -gt 0 ]; then
+      subcategory="${subcategories[0]}"
+      current_subcategory_index=0
+    else
+      subcategory=""
+      current_subcategory_index=0
+    fi
+  }
+  
+  # Load initial subcategories
+  load_subcategories
+  
+  while true; do
+    clear
+    printf "  ${YELLOW}Add New Data to Database${NC}\n"
+    printf "  ${CYAN}========================${NC}\n\n"
+    
+    # Display form
+    if [ $current_field -eq 1 ]; then
+      printf "  ${BOLD}${CYAN}▶ Data Type: ${data_type}${NC}\n"
+    else
+      printf "  ${GREEN}  Data Type: ${data_type}${NC}\n"
+    fi
+    
+    if [ $current_field -eq 2 ]; then
+      printf "  ${BOLD}${CYAN}▶ Year: ${years[$current_year_index]}${NC}\n"
+    else
+      printf "  ${GREEN}  Year: ${years[$current_year_index]}${NC}\n"
+    fi
+    
+    if [ $current_field -eq 3 ]; then
+      printf "  ${BOLD}${CYAN}▶ Date: ${date}${NC}\n"
+    else
+      printf "  ${GREEN}  Date: ${date}${NC}\n"
+    fi
+    
+    if [ $current_field -eq 4 ]; then
+      printf "  ${BOLD}${CYAN}▶ Type: ${type_field}${NC}\n"
+    else
+      printf "  ${GREEN}  Type: ${type_field}${NC}\n"
+    fi
+    
+    if [ $current_field -eq 5 ]; then
+      if [ "$data_type" = "cashflow" ]; then
+        printf "  ${BOLD}${CYAN}▶ Coin: ${coin}${NC}\n"
+      else
+        printf "  ${BOLD}${CYAN}▶ Symbol: ${symbol_input}${NC}\n"
+      fi
+    else
+      if [ "$data_type" = "cashflow" ]; then
+        printf "  ${GREEN}  Coin: ${coin}${NC}\n"
+      else
+        printf "  ${GREEN}  Symbol: ${symbol_input}${NC}\n"
+      fi
+    fi
+    
+    if [ $current_field -eq 6 ]; then
+      printf "  ${BOLD}${CYAN}▶ Quantity: ${qty_input}${NC}\n"
+    else
+      printf "  ${GREEN}  Quantity: ${qty_input}${NC}\n"
+    fi
+    
+    if [ $current_field -eq 7 ]; then
+      printf "  ${BOLD}${CYAN}▶ Category: ${category}${NC}\n"
+    else
+      printf "  ${GREEN}  Category: ${category}${NC}\n"
+    fi
+    
+    if [ $current_field -eq 8 ]; then
+      printf "  ${BOLD}${CYAN}▶ Subcategory: ${subcategory}${NC}\n"
+    else
+      printf "  ${GREEN}  Subcategory: ${subcategory}${NC}\n"
+    fi
+    
+    if [ $current_field -eq 9 ]; then
+      printf "  ${BOLD}${CYAN}▶ Description: ${description_input}${NC}\n"
+    else
+      printf "  ${GREEN}  Description: ${description_input}${NC}\n"
+    fi
+    
+    printf "\n  ${YELLOW}Use ↑↓ to navigate, ←→ to change values, Enter to confirm${NC}\n"
+    printf "  ${YELLOW}Press 'q' to cancel${NC}\n"
+    
+    key=$(read_key)
+    
+    case $key in
+      "UP")
+        if [ $current_field -gt 1 ]; then
+          ((current_field--))
+        else
+          current_field=9
+        fi
+        ;;
+      "DOWN")
+        if [ $current_field -lt 9 ]; then
+          ((current_field++))
+        else
+          current_field=1
+        fi
+        ;;
+      "LEFT")
+        case $current_field in
+          1) # Data type
+            if [ $current_data_type_index -gt 0 ]; then
+              ((current_data_type_index--))
+              data_type="${data_types[$current_data_type_index]}"
+            fi
+            ;;
+          2) # Year
+            if [ $current_year_index -gt 0 ]; then
+              ((current_year_index--))
+            fi
+            ;;
+          4) # Type
+            if [ $current_type_index -gt 0 ]; then
+              ((current_type_index--))
+              type_field="${types[$current_type_index]}"
+            fi
+            ;;
+          5) # Coin/Symbol
+            if [ "$data_type" = "cashflow" ]; then
+              if [ $current_coin_index -gt 0 ]; then
+                ((current_coin_index--))
+                coin="${coins[$current_coin_index]}"
+              fi
+            fi
+            ;;
+          7) # Category
+            if [ $current_category_index -gt 0 ]; then
+              ((current_category_index--))
+              category="${categories[$current_category_index]}"
+              load_subcategories
+            fi
+            ;;
+          8) # Subcategory
+            if [ $current_subcategory_index -gt 0 ]; then
+              ((current_subcategory_index--))
+              subcategory="${subcategories[$current_subcategory_index]}"
+            fi
+            ;;
+        esac
+        ;;
+      "RIGHT")
+        case $current_field in
+          1) # Data type
+            if [ $current_data_type_index -lt $((${#data_types[@]} - 1)) ]; then
+              ((current_data_type_index++))
+              data_type="${data_types[$current_data_type_index]}"
+            fi
+            ;;
+          2) # Year
+            if [ $current_year_index -lt $((${#years[@]} - 1)) ]; then
+              ((current_year_index++))
+            fi
+            ;;
+          4) # Type
+            if [ $current_type_index -lt $((${#types[@]} - 1)) ]; then
+              ((current_type_index++))
+              type_field="${types[$current_type_index]}"
+            fi
+            ;;
+          5) # Coin/Symbol
+            if [ "$data_type" = "cashflow" ]; then
+              if [ $current_coin_index -lt $((${#coins[@]} - 1)) ]; then
+                ((current_coin_index++))
+                coin="${coins[$current_coin_index]}"
+              fi
+            fi
+            ;;
+          7) # Category
+            if [ $current_category_index -lt $((${#categories[@]} - 1)) ]; then
+              ((current_category_index++))
+              category="${categories[$current_category_index]}"
+              load_subcategories
+            fi
+            ;;
+          8) # Subcategory
+            if [ $current_subcategory_index -lt $((${#subcategories[@]} - 1)) ]; then
+              ((current_subcategory_index++))
+              subcategory="${subcategories[$current_subcategory_index]}"
+            fi
+            ;;
+        esac
+        ;;
+      "ENTER")
+        case $current_field in
+          3) # Date input
+            printf "  Enter date (YYYY-MM-DD): "
+            read -r date_input
+            if [[ "$date_input" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]]; then
+              date="$date_input"
+            else
+              printf "  ${RED}Invalid date format. Using today's date.${NC}\n"
+              sleep 1
+            fi
+            ;;
+          5) # Symbol input (for investments)
+            if [ "$data_type" = "investments" ]; then
+              printf "  Enter symbol: "
+              read -r symbol_input
+            fi
+            ;;
+          6) # Quantity input
+            printf "  Enter quantity: "
+            read -r qty_input
+            if [[ "$qty_input" =~ ^-?[0-9]+\.?[0-9]*$ ]]; then
+              qty="$qty_input"
+            else
+              printf "  ${RED}Invalid quantity.${NC}\n"
+              sleep 1
+            fi
+            ;;
+          9) # Description input
+            printf "  Enter description: "
+            read -r description_input
+            description="$description_input"
+            ;;
+          *)
+            # All required fields are set, submit data
+            if [ -z "$qty_input" ] || [ "$qty" = "0.0" ]; then
+              printf "  ${RED}Please enter a quantity first!${NC}\n"
+              sleep 2
+            elif [ "$data_type" = "investments" ] && [ -z "$symbol_input" ]; then
+              printf "  ${RED}Please enter a symbol first!${NC}\n"
+              sleep 2
+            else
+              local coin_or_symbol
+              if [ "$data_type" = "cashflow" ]; then
+                coin_or_symbol="$coin"
+              else
+                coin_or_symbol="$symbol_input"
+              fi
+              submit_data "$data_type" "${years[$current_year_index]}" "$date" "$type_field" "$coin_or_symbol" "$qty" "$category" "$subcategory" "$description" "$port"
+              return
+            fi
+            ;;
+        esac
+        ;;
+      "QUIT")
+        return
+        ;;
+    esac
+  done
+}
+
