@@ -14,6 +14,9 @@ from flask import Flask, request, jsonify
 from lib import FinCashflow, FinInvestments
 from lib.common import format_df_for_print
 
+import plotext as plt
+plt.date_form('d/m/Y')
+
 # Class to manage the deepfinance backend
 class DeepManager:
     def __init__(self):
@@ -29,6 +32,12 @@ class DeepManager:
         self.finCashflow.run()
         self.finInvestments.run()
         pass
+
+    def get_df_m_cashflow(self):
+        df = self.finCashflow.df_m_cashflow
+        df_m_cashflow = df.iloc[1:] # Exclude the first row which has '-' in some columns
+
+        return df_m_cashflow
 
     def calc_global_nw(self):
         # Retrieve data from classes
@@ -154,6 +163,42 @@ def initialize():
         return f"Error initializing: {e}"
 
     return f"Succesfully initialized {year} data from path {data_path}."
+
+@app.route("/plot_expenses", methods=["GET"])
+def plot_explenses():
+    try:
+        nw_global = deepManager.calc_global_nw()
+        
+        dates = plt.datetimes_to_string(nw_global.index)
+        data = list(nw_global.networth)
+
+        plt.plot(dates, data)
+        plt.title("Networth")
+        plt.xlabel("Date")
+        plt.ylabel("Euro")
+        plt.show()
+
+        plt.clear_figure()  # Clear the previous plot
+
+        df_m_cashflow = deepManager.get_df_m_cashflow()
+        print(df_m_cashflow)
+        dates = plt.datetimes_to_string(df_m_cashflow.index)
+        incomes = list(df_m_cashflow.incomes)
+        liabilities = list(df_m_cashflow.liabilities.abs())
+
+        print(dates)
+        print(incomes)
+        print(liabilities)
+
+        print(f"lengths dates: {len(dates)}, incomes {len(incomes)}, liabs {len(liabilities)}")
+
+        plt.multiple_bar(dates, [incomes, liabilities], labels = ["incomes", "liabilities"])
+        plt.title("Cashflow")
+        plt.show()
+
+        return "Done"
+    except Exception as e:
+        return f"{e}"
 
 @app.route("/dashboard_status", methods=['GET'])
 def dashboard_status():
