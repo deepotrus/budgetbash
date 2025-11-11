@@ -62,6 +62,18 @@ class FinCashflow:
 
         return df_expenses
     
+    def calc_incomes(self, month : int = None):
+        if month is not None:
+            df_selected = self.df_year_cashflow[self.df_year_cashflow.index.month == month]
+        else:
+            df_selected = self.df_year_cashflow
+
+        df_incomes = df_selected.loc[
+            (df_selected["Category"] != "Transfer") & (df_selected["Qty"] > 0)
+        ]
+
+        return df_incomes
+
     def calc_monthly_cashflow(self):
         end_date = define_end_date(self.YEAR)
         df_year_cashflow = self.df_year_cashflow.loc[self.df_year_cashflow.index <= end_date]

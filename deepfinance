@@ -14,7 +14,7 @@ CYAN='\033[0;36m'
 BOLD='\033[1m'
 NC='\033[0m' # No Color
 
-main_menu_options=("Initialize Database" "Dashboard Status" "Database Operations" "Settings" "Quit")
+main_menu_options=("Initialize Database" "Dashboard Status" "Plot" "Database Operations" "Settings" "Quit")
 main_current_selection=0
 
 settings_menu_options=("Start Backend" "Stop Backend" "Set Port" "Set Demo" "Back")
@@ -423,6 +423,16 @@ display_dashboard() {
     read -n 1
 }
 
+display_plots() {
+  clear
+
+  # Fetch plots made with plotext for terminal
+  curl -X GET "localhost:$port_number/plot" > /dev/null 2>&1
+
+  printf "\n  ${YELLOW}Press any key to continue...${NC}\n"
+  read -n 1
+}
+
 # Function to handle main menu navigation
 navigate_main_menu() {
   while true; do
@@ -484,6 +494,15 @@ navigate_main_menu() {
           read -n 1
         else
           display_dashboard
+        fi
+      elif [ "$selected_option" = "Plot" ]; then
+        if ! backend_running; then
+          clear
+          printf "  ${RED}Backend is not running. Please start it from Settings first.${NC}\n"
+          printf "  ${YELLOW}Press any key to continue...${NC}\n"
+          read -n 1
+        else
+          display_plots
         fi
       elif [ "$selected_option" = "Database Operations" ]; then
         navigate_database_menu

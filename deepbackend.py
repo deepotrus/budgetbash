@@ -33,11 +33,21 @@ class DeepManager:
         self.finInvestments.run()
         pass
 
-    def get_df_m_cashflow(self):
+    def get_cashflow_info(self):
         df = self.finCashflow.df_m_cashflow
         df_m_cashflow = df.iloc[1:] # Exclude the first row which has '-' in some columns
 
-        return df_m_cashflow
+        df_expenses_year = self.finCashflow.calc_expenses()
+        df_expenses_year_by_category = df_expenses_year.groupby('Category')['Qty'].sum().reset_index(name='Expenses')
+        df_expenses_year_by_category = df_expenses_year_by_category.sort_values('Expenses', ascending=False)
+        df_expenses_year_by_category['Percentage'] = ((df_expenses_year_by_category['Expenses'] / df_expenses_year_by_category['Expenses'].sum()) * 100).round(2)
+
+        df_incomes_year = self.finCashflow.calc_incomes()
+        df_incomes_year_by_category = df_incomes_year.groupby('Category')['Qty'].sum().reset_index(name="Incomes")
+        df_incomes_year_by_category = df_incomes_year_by_category.sort_values('Incomes', ascending=False)
+        df_incomes_year_by_category['Percentage'] = ((df_incomes_year_by_category['Incomes'] / df_incomes_year_by_category['Incomes'].sum()) * 100).round(2)
+
+        return df_m_cashflow, df_expenses_year_by_category, df_incomes_year_by_category
 
     def calc_global_nw(self):
         # Retrieve data from classes
@@ -63,6 +73,11 @@ class DeepManager:
     # Today Networth status
     def get_nw_status(self):
         return self.nw_global.iloc[-1].round(2)
+    
+    def get_all_balances(self):
+        all_balances = self.finCashflow.get_all_balances()
+
+        return all_balances
 
 # Initialize flask app and wrapper
 app = Flask(__name__)
@@ -164,36 +179,52 @@ def initialize():
 
     return f"Succesfully initialized {year} data from path {data_path}."
 
-@app.route("/plot_expenses", methods=["GET"])
-def plot_explenses():
+@app.route("/plot", methods=["GET"])
+def plot():
     try:
         nw_global = deepManager.calc_global_nw()
-        
-        dates = plt.datetimes_to_string(nw_global.index)
-        data = list(nw_global.networth)
 
-        plt.plot(dates, data)
+        dates = plt.datetimes_to_string(nw_global.index)
+        liquidity = list(nw_global.liquidity)
+        investments = list(nw_global.investments)
+        networth = liquidity + investments
+
+        plt.theme("pro")
+        plt.plotsize(60, 20)
+        plt.simple_stacked_bar(dates, [investments, liquidity], labels = ["investments", "liquidity"], width=80, title="Networth")
         plt.title("Networth")
         plt.xlabel("Date")
         plt.ylabel("Euro")
         plt.show()
-
         plt.clear_figure()  # Clear the previous plot
+        print()
+        df_m_cashflow, df_expenses_year, df_incomes_year = deepManager.get_cashflow_info()
+        #dates = plt.datetimes_to_string(df_m_cashflow.index)
+        #incomes = list(df_m_cashflow.incomes)
+        #liabilities = list(df_m_cashflow.liabilities.abs())
+        #plt.simple_multiple_bar(dates, [incomes, liabilities], width = 50, labels = ["incomes", "liabilities"])
+        #plt.title("Cashflow")
+        #plt.show()
+        #plt.clear_figure()  # Clear the previous plot
 
-        df_m_cashflow = deepManager.get_df_m_cashflow()
-        print(df_m_cashflow)
-        dates = plt.datetimes_to_string(df_m_cashflow.index)
-        incomes = list(df_m_cashflow.incomes)
-        liabilities = list(df_m_cashflow.liabilities.abs())
+        #print(df_expenses_year)
 
-        print(dates)
-        print(incomes)
-        print(liabilities)
+        categories = list(df_expenses_year["Category"])
+        total_expenses_by_category = list(df_expenses_year["Expenses"])
+        percentage = list(df_expenses_year["Percentage"])
 
-        print(f"lengths dates: {len(dates)}, incomes {len(incomes)}, liabs {len(liabilities)}")
+        plt.simple_bar(categories, total_expenses_by_category, width=60, title = "Yearly Expenses", color="orange")
+        #plt.title("Expenses by
+        plt.show()
+        plt.clear_figure()  # Clear the previous plot
+        print()
 
-        plt.multiple_bar(dates, [incomes, liabilities], labels = ["incomes", "liabilities"])
-        plt.title("Cashflow")
+        #print(df_incomes_year)
+        categories = list(df_incomes_year["Category"])
+        total_incomes_by_category = list(df_incomes_year["Incomes"])
+        percentage = list(df_incomes_year["Percentage"])
+
+        plt.simple_bar(categories, total_incomes_by_category, width=60, title = "Yearly Incomes", color="cyan")
         plt.show()
 
         return "Done"
@@ -205,6 +236,9 @@ def dashboard_status():
     try:
         deepManager.calc_global_nw()
         nw_status = deepManager.get_nw_status()
+        all_balances = deepManager.get_all_balances()
+
+        print(all_balances)
 
         liquidity = nw_status['liquidity']
         investments = nw_status['investments']
