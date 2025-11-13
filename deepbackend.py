@@ -13,6 +13,7 @@ from flask import Flask, request, jsonify
 
 from lib import FinCashflow, FinInvestments
 from lib.common import format_df_for_print
+from lib import BudgetPlotter
 
 import plotext as plt
 plt.date_form('d/m/Y')
@@ -213,10 +214,14 @@ def plot():
         total_expenses_by_category = list(df_expenses_year["Expenses"])
         percentage = list(df_expenses_year["Percentage"])
 
-        plt.simple_bar(categories, total_expenses_by_category, width=60, title = "Yearly Expenses", color="orange")
-        #plt.title("Expenses by
-        plt.show()
-        plt.clear_figure()  # Clear the previous plot
+        expenses_dict = df_expenses_year.set_index('Category')['Expenses'].to_dict()
+        print(expenses_dict)
+        budgetPlotter = BudgetPlotter()
+        budgetPlotter.draw_pie_chart(expenses_dict, width=50, height=30)
+
+        #plt.simple_bar(categories, total_expenses_by_category, width=60, title = "Yearly Expenses", color="orange")
+        #plt.show()
+        #plt.clear_figure()  # Clear the previous plot
         print()
 
         #print(df_incomes_year)

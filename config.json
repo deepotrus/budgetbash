@@ -4,7 +4,7 @@
     "Category": ["Transfer", "Subs", "Groceries", "Health", "Leisure", "Transport", "Shop", "Bills", "Other", "Family", "Holiday", "Gift", "Car", "Financial", "Income", "Employement"],
     "Subcategory": {
       "Transfer": ["ToBBVA","ToRevolut","ToDirecta","ToING","ToINGCD","ToHype","ToBitget","ToCash","Invest","FromBBVA","FromRevolut","FromDirecta","FromBitget","FromING","FromINGCD","FromHype"],
-      "Subs": ["Bank", "VPS", "SIM", "VPN", "Amazon"],
+      "Subs": ["Bank", "VPS", "SIM", "VPN", "Amazon", "Services"],
       "Groceries": ["Diet", "Food","Supplements"],
       "Health": ["Gym", "Hygiene", "Eyes", "Visit"],
       "Leisure": ["Food", "Drink", "Events", "Restaurant", "Games", "Karma", "Party", "Family", "Coffee"],
