@@ -18,7 +18,7 @@ from lib import BudgetPlotter
 import plotext as plt
 plt.date_form('d/m/Y')
 
-# Class to manage the deepfinance backend
+# Class to manage the budgetbash backend
 class DeepManager:
     def __init__(self):
         self.finCashflow : FinCashflow = None
@@ -207,7 +207,7 @@ def validate_data(data_type, category, subcategory, coin=None, symbol=None):
 
 @app.route("/", methods=['GET'])
 def root():
-    return "Deepfinance Backend OK"
+    return "BudgetBash Backend OK"
 
 @app.route("/shutdown", methods=['GET'])
 def shutdown():

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Database Add Functions for Deepfinance
+# Database Add Functions for BudgetBash
 
 # Color definitions
 RED='\033[0;31m'

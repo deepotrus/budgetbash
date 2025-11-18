@@ -15,17 +15,20 @@ BOLD='\033[1m'
 NC='\033[0m' # No Color
 
 BANNER="
-  ${YELLOW}  _____       _         _   _____         _    ${NC}
-  ${YELLOW} | __  |_ _ _| |___ ___| |_| __  |___ ___| |_  ${NC}
-  ${YELLOW} | __ -| | | . | . | -_|  _| __ -| .'|_ -|   | ${NC}
-  ${YELLOW} |_____|___|___|_  |___|_| |_____|__,|___|_|_| ${NC}
-  ${YELLOW}               |___|                           ${NC}      
+
+  ${YELLOW}                                        _        ${NC}
+  ${YELLOW}  _____       _         _   _____     _| |_ _    ${NC}
+  ${YELLOW} | __  |_ _ _| |___ ___| |_| __  |___|   __| |_  ${NC}
+  ${YELLOW} | __ -| | | . | . | -_|  _| __ -| .'|__   |   | ${NC}
+  ${YELLOW} |_____|___|___|_  |___|_| |_____|__,|_   _|_|_| ${NC}
+  ${YELLOW}               |___|                   |_|       ${NC}
+
 "
 
 main_menu_options=("Initialize Database" "Dashboard Status" "Plot" "Database Operations" "Settings" "Quit")
 main_current_selection=0
 
-settings_menu_options=("Start Backend" "Stop Backend" "Set Port" "Set Demo" "Back")
+settings_menu_options=("Start Backend" "Stop Backend" "Set Port" "Set Demo" "Clean Cache" "Back")
 settings_current_selection=0
 
 database_menu_options=("Add Data" "Delete Data" "View Database" "Back")
@@ -35,20 +38,35 @@ database_current_selection=0
 display_main_menu() {
   clear
 
-  echo -e "$BANNER"
+  # Get terminal width
+  local term_width=$(tput cols)
 
-  printf "  ${RED}~~~~ ${NC}${YELLOW}Menu${NC}${RED} ~~~~${NC}\n"
+  # Calculate centering for banner (banner is ~50 chars wide)
+  local banner_width=50
+  local banner_padding=$(( (term_width - banner_width) / 2 ))
+
+  # Center and display banner
+  echo -e "$BANNER" | while IFS= read -r line; do
+    printf "%${banner_padding}s%s\n" "" "$line"
+  done
+
+  # Calculate centering for menu items
+  local menu_width=40  # Approximate menu width
+  local menu_padding=$(( (term_width - menu_width) / 2 ))
+  local padding_str=$(printf '%*s' "$menu_padding" "")
+
+  printf "${padding_str}${RED}~~~~ ${NC}${YELLOW}Menu${NC}${RED} ~~~~${NC}\n"
 
   for i in "${!main_menu_options[@]}"; do
     if [ $i -eq $main_current_selection ]; then
-      printf "  ${BOLD}${CYAN}▶ ${main_menu_options[$i]}${NC}\n"
+      printf "${padding_str}${BOLD}${CYAN}▶ ${main_menu_options[$i]}${NC}\n"
     else
-      printf "  ${GREEN}  ${main_menu_options[$i]}${NC}\n"
+      printf "${padding_str}${GREEN}  ${main_menu_options[$i]}${NC}\n"
     fi
   done
 
-  printf "  ${RED}~~~~~~~~~~~~~~~~~~~~${NC}\n"
-  printf "  ${YELLOW}Use ↑↓ arrows to navigate, Enter to select${NC}\n"
+  printf "${padding_str}${RED}~~~~~~~~~~~~~~~~~~~~${NC}\n"
+  printf "${padding_str}${YELLOW}Use ↑↓ arrows to navigate, Enter to select${NC}\n"
 }
 
 # Function to read a single keypress
@@ -183,6 +201,33 @@ navigate_settings_menu() {
         clear
         DATA_PATH="./demo"
         printf "  ${GREEN}Data path set to: $DATA_PATH${NC}\n"
+        printf "  ${YELLOW}Press any key to continue...${NC}\n"
+        read -n 1
+      elif [ "$selected_option" = "Clean Cache" ]; then
+        clear
+        printf "  ${RED}Warning: This will delete all cached market data files${NC}\n"
+        printf "  ${YELLOW}Cache location: ./demo/cache/${NC}\n"
+        printf "  ${YELLOW}Files will be re-downloaded when needed${NC}\n\n"
+        printf "  ${BOLD}Are you sure? (y/N): ${NC}"
+        read -n 1 confirm
+        echo
+        if [[ "$confirm" =~ ^[Yy]$ ]]; then
+          if [ -d "./demo/cache" ]; then
+            # Count files before deletion (excluding .gitignore)
+            file_count=$(find ./demo/cache -type f ! -name '.gitignore' | wc -l)
+            if [ "$file_count" -gt 0 ]; then
+              # Delete all files except .gitignore
+              find ./demo/cache -type f ! -name '.gitignore' -delete
+              printf "\n  ${GREEN}✓ Successfully deleted $file_count cache file(s)${NC}\n"
+            else
+              printf "\n  ${YELLOW}Cache is already empty${NC}\n"
+            fi
+          else
+            printf "\n  ${RED}Error: Cache directory not found${NC}\n"
+          fi
+        else
+          printf "\n  ${YELLOW}Cache cleanup cancelled${NC}\n"
+        fi
         printf "  ${YELLOW}Press any key to continue...${NC}\n"
         read -n 1
       fi
@@ -420,7 +465,7 @@ display_dashboard() {
     local max_label_len=20  # "Percentage Change: " is the longest
     
     # Create dashboard with centered layout
-    printf "  ${RED}┌─ DeepFinance Dashboard ─────────────────┐${NC}\n"
+    printf "  ${RED}┌─ BudgetBash Dashboard ──────────────────┐${NC}\n"
     printf "\n"
     printf "  ${YELLOW}Net Worth:${NC} ${GREEN}€%s${NC}\n" "$networth_str"
     printf "  ${YELLOW}Liquidity:${NC} ${BLUE}€%s${NC}\n" "$liquidity_str"

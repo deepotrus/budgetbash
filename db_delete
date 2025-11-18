@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Database Delete Functions for Deepfinance
+# Database Delete Functions for BudgetBash
 
 # Color definitions
 RED='\033[0;31m'
