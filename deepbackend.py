@@ -96,6 +96,54 @@ def load_config():
     except Exception as e:
         return None
 
+def load_mappings():
+    """Load and return mappings.json"""
+    try:
+        with open('mappings.json', 'r') as f:
+            return json.load(f)
+    except Exception as e:
+        return None
+
+def expand_transfer_templates(config):
+    """Expand Transfer subcategories templates with actual provider names from mappings.json"""
+    try:
+        mappings = load_mappings()
+        if mappings is None:
+            return config
+
+        # Expand for cashflow
+        if 'cashflow' in config and 'Subcategory' in config['cashflow'] and 'Transfer' in config['cashflow']['Subcategory']:
+            transfer_templates = config['cashflow']['Subcategory']['Transfer']
+            expanded = []
+
+            for template in transfer_templates:
+                # Check if template contains placeholder
+                if '{' in template and '}' in template:
+                    # Extract placeholder: "To{Acc1}" -> "Acc1"
+                    start = template.index('{')
+                    end = template.index('}')
+                    placeholder = template[start+1:end]
+
+                    # Get mapped value
+                    if placeholder in mappings:
+                        # Replace placeholder with actual value
+                        expanded_value = template[:start] + mappings[placeholder] + template[end+1:]
+                        expanded.append(expanded_value)
+                    else:
+                        # Placeholder not found in mappings, keep as-is
+                        expanded.append(template)
+                else:
+                    # No placeholder (e.g., "Invest"), keep as-is
+                    expanded.append(template)
+
+            # Update config with expanded values
+            config['cashflow']['Subcategory']['Transfer'] = expanded
+
+        return config
+    except Exception as e:
+        # If expansion fails, return original config
+        return config
+
 def get_csv_path(data_type, year, month, data_path=None):
     """Construct CSV file path for cashflow or investments"""
     if data_path is None:
@@ -125,32 +173,35 @@ def validate_data(data_type, category, subcategory, coin=None, symbol=None):
     config = load_config()
     if config is None:
         return False, "Config file not found"
-    
+
+    # Expand Transfer templates
+    config = expand_transfer_templates(config)
+
     # Get the appropriate section based on data_type
     if data_type not in ["cashflow", "investments"]:
         return False, f"Invalid data_type: {data_type}. Must be 'cashflow' or 'investments'"
-    
+
     data_config = config.get(data_type, {})
     if not data_config:
         return False, f"Config section for {data_type} not found"
-    
+
     # Validate category
     valid_categories = data_config.get("Category", [])
     if category not in valid_categories:
         return False, f"Invalid category. Must be one of {valid_categories}"
-    
+
     # Validate subcategory
     subcategories = data_config.get("Subcategory", {})
     if category in subcategories:
         if subcategory not in subcategories[category]:
             return False, f"Invalid subcategory for {category}. Must be one of {subcategories[category]}"
-    
+
     # Validate coin (for cashflow)
     if data_type == "cashflow" and coin is not None:
         valid_coins = data_config.get("Coin", [])
         if coin not in valid_coins:
             return False, f"Invalid coin. Must be one of {valid_coins}"
-    
+
     return True, "Valid"
 
 
@@ -483,19 +534,22 @@ def get_subcategories():
     try:
         category = request.args.get('category')
         data_type = request.args.get('data_type', 'cashflow')  # Default to cashflow for backward compatibility
-        
+
         config = load_config()
-        
+
         if config is None:
             return ""
-        
+
+        # Expand Transfer templates
+        config = expand_transfer_templates(config)
+
         # Get the appropriate section based on data_type
         if data_type not in ["cashflow", "investments"]:
             return ""
-        
+
         data_config = config.get(data_type, {})
         subcategories = data_config.get("Subcategory", {})
-        
+
         if category in subcategories:
             return ','.join(subcategories[category])
         else:

@@ -14,6 +14,14 @@ CYAN='\033[0;36m'
 BOLD='\033[1m'
 NC='\033[0m' # No Color
 
+BANNER="
+  ${YELLOW}  _____       _         _   _____         _    ${NC}
+  ${YELLOW} | __  |_ _ _| |___ ___| |_| __  |___ ___| |_  ${NC}
+  ${YELLOW} | __ -| | | . | . | -_|  _| __ -| .'|_ -|   | ${NC}
+  ${YELLOW} |_____|___|___|_  |___|_| |_____|__,|___|_|_| ${NC}
+  ${YELLOW}               |___|                           ${NC}      
+"
+
 main_menu_options=("Initialize Database" "Dashboard Status" "Plot" "Database Operations" "Settings" "Quit")
 main_current_selection=0
 
@@ -26,6 +34,9 @@ database_current_selection=0
 # Function to display the main menu
 display_main_menu() {
   clear
+
+  echo -e "$BANNER"
+
   printf "  ${RED}~~~~ ${NC}${YELLOW}Menu${NC}${RED} ~~~~${NC}\n"
 
   for i in "${!main_menu_options[@]}"; do
