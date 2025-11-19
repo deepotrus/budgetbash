@@ -34,9 +34,14 @@ settings_current_selection=0
 database_menu_options=("Add Data" "Delete Data" "View Database" "Back")
 database_current_selection=0
 
-# Function to display the main menu
-display_main_menu() {
+# Global variables to track menu positions
+declare -a MENU_ITEM_ROWS
+MENU_START_ROW=0
+
+# Function to draw static parts of main menu (banner + menu structure)
+draw_static_main_menu() {
   clear
+  tput cup 0 0  # Ensure we start at top-left
 
   # Get terminal width
   local term_width=$(tput cols)
@@ -45,9 +50,11 @@ display_main_menu() {
   local banner_width=50
   local banner_padding=$(( (term_width - banner_width) / 2 ))
 
-  # Center and display banner
+  # Center and display banner (count lines as we go)
+  local line_count=0
   echo -e "$BANNER" | while IFS= read -r line; do
     printf "%${banner_padding}s%s\n" "" "$line"
+    ((line_count++))
   done
 
   # Calculate centering for menu items
@@ -55,9 +62,16 @@ display_main_menu() {
   local menu_padding=$(( (term_width - menu_width) / 2 ))
   local padding_str=$(printf '%*s' "$menu_padding" "")
 
+  # Print menu header and track the row
   printf "${padding_str}${RED}~~~~ ${NC}${YELLOW}Menu${NC}${RED} ~~~~${NC}\n"
 
+  # Get current cursor row position
+  # Banner outputs 10 lines (rows 0-9), menu header is row 10, menu items start at row 11
+  local menu_start_row=11
+
+  # Draw all menu items and store their exact row positions
   for i in "${!main_menu_options[@]}"; do
+    MENU_ITEM_ROWS[$i]=$((menu_start_row + i))
     if [ $i -eq $main_current_selection ]; then
       printf "${padding_str}${BOLD}${CYAN}▶ ${main_menu_options[$i]}${NC}\n"
     else
@@ -67,6 +81,33 @@ display_main_menu() {
 
   printf "${padding_str}${RED}~~~~~~~~~~~~~~~~~~~~${NC}\n"
   printf "${padding_str}${YELLOW}Use ↑↓ arrows to navigate, Enter to select${NC}\n"
+}
+
+# Function to update only the selection indicator (no full redraw)
+update_selection_indicator() {
+  local old_selection=$1
+  local new_selection=$2
+
+  # Get terminal width for centering
+  local term_width=$(tput cols)
+  local menu_width=40
+  local menu_padding=$(( (term_width - menu_width) / 2 ))
+  local padding_str=$(printf '%*s' "$menu_padding" "")
+
+  # Clear the old selection indicator (redraw as unselected)
+  tput cup ${MENU_ITEM_ROWS[$old_selection]} 0
+  printf "\r${padding_str}${GREEN}  ${main_menu_options[$old_selection]}${NC}"
+  tput el  # Clear to end of line
+
+  # Draw the new selection indicator
+  tput cup ${MENU_ITEM_ROWS[$new_selection]} 0
+  printf "\r${padding_str}${BOLD}${CYAN}▶ ${main_menu_options[$new_selection]}${NC}"
+  tput el  # Clear to end of line
+}
+
+# Function to display the main menu (DEPRECATED - kept for compatibility)
+display_main_menu() {
+  draw_static_main_menu
 }
 
 # Function to read a single keypress
@@ -491,9 +532,23 @@ display_plots() {
 
 # Function to handle main menu navigation
 navigate_main_menu() {
+  # Enter alternate screen buffer for clean display
+  tput smcup
+
+  # Hide cursor for cleaner appearance
+  tput civis
+
+  # Trap to ensure cleanup on exit
+  trap 'tput rmcup; tput cnorm' EXIT INT TERM
+
+  # Draw the static menu once
+  draw_static_main_menu
+
   while true; do
-    display_main_menu
     key=$(read_key)
+
+    # Store old selection for selective update
+    old_selection=$main_current_selection
 
     case $key in
     "UP")
@@ -502,6 +557,8 @@ navigate_main_menu() {
       else
         main_current_selection=$((${#main_menu_options[@]} - 1))
       fi
+      # Only update the changed lines
+      update_selection_indicator $old_selection $main_current_selection
       ;;
     "DOWN")
       if [ $main_current_selection -lt $((${#main_menu_options[@]} - 1)) ]; then
@@ -509,9 +566,16 @@ navigate_main_menu() {
       else
         main_current_selection=0
       fi
+      # Only update the changed lines
+      update_selection_indicator $old_selection $main_current_selection
       ;;
     "ENTER")
       selected_option="${main_menu_options[$main_current_selection]}"
+
+      # Exit alternate screen and show cursor for menu actions
+      tput rmcup
+      tput cnorm
+
       if [ "$selected_option" = "Initialize Database" ]; then
         clear
         if ! backend_running; then
@@ -524,16 +588,16 @@ navigate_main_menu() {
           if [ -n "$input_year" ]; then
             YEAR=$input_year
           fi
-          
+
           printf "  ${YELLOW}Enter data path (e.g., ./demo or ../data, current: $DATA_PATH): ${NC}"
           read -r input_path
           if [ -n "$input_path" ]; then
             DATA_PATH=$input_path
           fi
-          
+
           response=$(curl -s -X POST "localhost:$port_number/initialize" \
             -d "year=$YEAR&data_path=$DATA_PATH")
-          
+
           if echo "$response" | grep -q "Error"; then
             printf "\n  ${RED}%s${NC}\n" "$response"
           else
@@ -572,6 +636,22 @@ navigate_main_menu() {
         printf "  ${BLUE}Goodbye!${NC}\n"
         exit 0
       fi
+
+      # Re-enter alternate screen and hide cursor after action
+      tput smcup
+      tput civis
+      draw_static_main_menu
+      ;;
+    "QUIT")
+      # Clean exit
+      tput rmcup
+      tput cnorm
+      if backend_running; then
+        curl -X GET "localhost:$port_number/shutdown" > /dev/null 2>&1
+        printf "  ${YELLOW}Backend stopped...${NC}\n"
+      fi
+      printf "  ${BLUE}Goodbye!${NC}\n"
+      exit 0
       ;;
     esac
   done
