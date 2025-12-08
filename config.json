@@ -4,7 +4,7 @@
   },
   "cashflow": {
     "columns": ["Date", "Type", "Coin", "Qty", "Category", "Subcategory", "Description"],
-    "Category": ["Transfer", "Subs", "Groceries", "Health", "Leisure", "Transport", "Shop", "Bills", "Other", "Family", "Holiday", "Gift", "Car", "Financial", "Income", "Employement"],
+    "Category": ["Transfer", "Subs", "Groceries", "Health", "Leisure", "Transport", "Shop", "Bills", "Other", "Family", "Holiday", "Gift", "Car", "Financial", "Income", "Employment"],
     "Subcategory": {
       "Transfer": ["To{Acc1}","To{Acc2}","To{Acc3}","To{Acc4}","To{Acc5}","To{Broker1}","To{Broker2}","To{Cash}","Invest","From{Acc1}","From{Acc2}","From{Acc3}","From{Acc4}","From{Acc5}","From{Broker1}","From{Broker2}","From{Cash}"],
       "Subs": ["Bank", "VPS", "SIM", "VPN", "Amazon", "Services"],
@@ -18,10 +18,9 @@
       "Family": ["Food", "Favors", "Groceries", "Accessories", "Karma", "Favor"],
       "Holiday": ["Rent", "Transport", "Drink", "Shop", "Food", "Restaurant", "Gift", "Party", "Tassa", "Groceries"],
       "Gift": ["Karma"],
-      "Car": ["Buy", "Papers", "RCA", "Gasoline"],
-      "Financial": ["Untaxable"],
-      "Income": ["Cashback","Goodselling"],
-      "Employement": ["Salary"]
+      "Car": ["Gasoline", "Care", "Maintenance", "Toll", "Buy", "Papers", "RCA"],
+      "Income": ["Cashback","Interests","Goodselling","Gift"],
+      "Employement": ["Salary", "Bonus"]
     },
     "Coin": ["EUR", "USD"]
   },
