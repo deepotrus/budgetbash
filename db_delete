@@ -34,7 +34,7 @@ read_key() {
 
 # Function to check if backend is running
 backend_running() {
-  local port="${1:-5000}"
+  local port="${1:-$port_number}"
   if curl -s "localhost:${port}/" > /dev/null 2>&1; then
     return 0
   else
@@ -55,7 +55,7 @@ load_database_data() {
   local data_type="$1"
   local year="$2"
   local month="$3"
-  local port="${4:-5000}"
+  local port="$4"
   
   if ! backend_running "$port"; then
     show_backend_error
@@ -108,7 +108,7 @@ get_row_data() {
   local data_type="$2"
   local year="$3"
   local month="$4"
-  local port="${5:-5000}"
+  local port="$5"
   response=$(curl -s "localhost:${port}/get_row_data?line_number=$line_number&data_type=${data_type}&year=${year}&month=${month}")
   echo "$response"
 }
@@ -136,7 +136,7 @@ delete_row() {
   local data_type="$2"
   local year="$3"
   local month="$4"
-  local port="${5:-5000}"
+  local port="$5"
   
   response=$(curl -s -X POST "localhost:${port}/delete_row" \
     -d "line_number=$line_number&data_type=${data_type}&year=${year}&month=${month}")
@@ -150,7 +150,7 @@ delete_row() {
 
 # Main delete function with navigation
 delete_data() {
-  local port="${1:-5000}"
+  local port="$1"
   
   if ! backend_running "$port"; then
     show_backend_error

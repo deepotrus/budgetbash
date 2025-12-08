@@ -1,4 +1,7 @@
 {
+  "app": {
+    "port": 4720
+  },
   "cashflow": {
     "columns": ["Date", "Type", "Coin", "Qty", "Category", "Subcategory", "Description"],
     "Category": ["Transfer", "Subs", "Groceries", "Health", "Leisure", "Transport", "Shop", "Bills", "Other", "Family", "Holiday", "Gift", "Car", "Financial", "Income", "Employement"],

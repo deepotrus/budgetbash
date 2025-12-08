@@ -34,7 +34,7 @@ read_key() {
 
 # Function to check if backend is running
 backend_running() {
-  local port="${1:-5000}"
+  local port="${1:-$port_number}"
   if curl -s "localhost:${port}/" > /dev/null 2>&1; then
     return 0
   else
@@ -53,7 +53,7 @@ submit_data() {
   local category="$7"
   local subcategory="$8"
   local description="$9"
-  local port="${10:-5000}"
+  local port="${10}"
   
   local url="localhost:${port}/add_data"
   local data="data_type=${data_type}&year=${year}&date=${date}&type=${type_field}&qty=${qty}&category=${category}&subcategory=${subcategory}&description=${description}"
@@ -80,7 +80,7 @@ submit_data() {
 
 # Interactive add data function
 add_data() {
-  local port="${1:-5000}"
+  local port="$1"
   
   if ! backend_running "$port"; then
     printf "  ${RED}Backend is not running on port ${port}. Please start it first.${NC}\n"
