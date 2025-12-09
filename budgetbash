@@ -63,7 +63,7 @@ BANNER="
 
 "
 
-main_menu_options=("Initialize Database" "Dashboard Status" "Plot" "Database Operations" "Settings" "Quit")
+main_menu_options=("Initialize Database" "Dashboard Status" "Plot" "Plot Month" "Database Operations" "Settings" "Quit")
 main_current_selection=0
 
 settings_menu_options=("Start Backend" "Stop Backend" "Set Demo" "Clean Cache" "Back")
@@ -520,6 +520,9 @@ display_dashboard() {
     local networth=$(echo "$response" | jq -r '.networth')
     local nwch=$(echo "$response" | jq -r '.nwch')
     local pct_ch=$(echo "$response" | jq -r '.pct_ch')
+
+    # Extract account balances as key-value pairs
+    local balances_json=$(echo "$response" | jq -r '.all_balances // {}')
     
     # Format numbers (remove .00 if present)
     local networth_str=$(printf "%.2f" "$networth" | sed 's/\.00$//')
@@ -541,7 +544,43 @@ display_dashboard() {
     printf "  ${YELLOW}Percentage Change:${NC} ${CYAN}%s%%${NC}\n" "$pct_ch_str"
     printf "\n"
     printf "  ${RED}└────────────────────────────────────────┘${NC}\n"
-    
+
+    # Display Account Cards box
+    printf "\n"
+    printf "  ${RED}┌─ Account Cards ─────────────────────────┐${NC}\n"
+    printf "\n"
+
+    # Check if balances exist
+    if [ "$balances_json" != "{}" ] && [ "$balances_json" != "null" ]; then
+        # Get all account names and sort them
+        local account_names=$(echo "$balances_json" | jq -r 'keys[]' 2>/dev/null | sort)
+
+        # Display each account balance
+        if [ -n "$account_names" ]; then
+            while IFS= read -r account; do
+                local balance=$(echo "$balances_json" | jq -r --arg acc "$account" '.[$acc]' 2>/dev/null)
+
+                # Format balance (remove .00 if present)
+                local balance_str=$(printf "%.2f" "$balance" 2>/dev/null | sed 's/\.00$//')
+
+                # Handle potential formatting errors
+                if [ $? -ne 0 ] || [ -z "$balance_str" ]; then
+                    balance_str="0"
+                fi
+
+                # Display with consistent color (CYAN for all balances)
+                printf "  ${YELLOW}%s:${NC} ${CYAN}€%s${NC}\n" "$account" "$balance_str"
+            done <<< "$account_names"
+        else
+            printf "  ${YELLOW}No accounts found${NC}\n"
+        fi
+    else
+        printf "  ${YELLOW}No account data available${NC}\n"
+    fi
+
+    printf "\n"
+    printf "  ${RED}└────────────────────────────────────────┘${NC}\n"
+
     printf "\n  ${YELLOW}Press any key to continue...${NC}\n"
     read -n 1
 }
@@ -554,6 +593,72 @@ display_plots() {
 
   printf "\n  ${YELLOW}Press any key to continue...${NC}\n"
   read -n 1
+}
+
+plot_month_interactive() {
+  if ! backend_running; then
+    clear
+    printf "  ${RED}Backend is not running. Please start it first.${NC}\n"
+    printf "  ${YELLOW}Press any key to continue...${NC}\n"
+    read -n 1
+    return
+  fi
+
+  # Get current month as default
+  local current_month=$(date +%m | sed 's/^0//')
+  local months=("1" "2" "3" "4" "5" "6" "7" "8" "9" "10" "11" "12")
+  local month_names=("January" "February" "March" "April" "May" "June" "July" "August" "September" "October" "November" "December")
+  local current_month_index=$((current_month - 1))
+  local month="${months[$current_month_index]}"
+
+  # Function to display plot for selected month
+  display_month_plot() {
+    local mo="$1"
+    local mo_idx="$2"
+
+    clear
+    printf "  ${YELLOW}Monthly Expenses Plot - ${month_names[$mo_idx]} (${mo})${NC}\n"
+    printf "  ${CYAN}================================================${NC}\n\n"
+
+    # Call backend to generate and display plot
+    local response=$(curl -s "localhost:$port_number/plot_month?month=${mo}")
+
+    # Check if response contains error
+    if echo "$response" | grep -q "Error"; then
+      printf "  ${RED}${response}${NC}\n"
+    elif echo "$response" | grep -q "No expense data"; then
+      printf "  ${YELLOW}${response}${NC}\n"
+    fi
+
+    printf "\n  ${YELLOW}Use ←→ to change month, 'q' to quit${NC}\n"
+  }
+
+  # Initial display - show plot for current month
+  display_month_plot "$month" "$current_month_index"
+
+  while true; do
+    key=$(read_key)
+
+    case $key in
+      "LEFT")
+        if [ $current_month_index -gt 0 ]; then
+          ((current_month_index--))
+          month="${months[$current_month_index]}"
+          display_month_plot "$month" "$current_month_index"
+        fi
+        ;;
+      "RIGHT")
+        if [ $current_month_index -lt $((${#months[@]} - 1)) ]; then
+          ((current_month_index++))
+          month="${months[$current_month_index]}"
+          display_month_plot "$month" "$current_month_index"
+        fi
+        ;;
+      "QUIT")
+        return
+        ;;
+    esac
+  done
 }
 
 # Function to handle main menu navigation
@@ -649,6 +754,15 @@ navigate_main_menu() {
           read -n 1
         else
           display_plots
+        fi
+      elif [ "$selected_option" = "Plot Month" ]; then
+        if ! backend_running; then
+          clear
+          printf "  ${RED}Backend is not running. Please start it from Settings first.${NC}\n"
+          printf "  ${YELLOW}Press any key to continue...${NC}\n"
+          read -n 1
+        else
+          plot_month_interactive
         fi
       elif [ "$selected_option" = "Database Operations" ]; then
         navigate_database_menu

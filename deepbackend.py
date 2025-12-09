@@ -287,6 +287,78 @@ def plot():
     except Exception as e:
         return f"{e}"
 
+@app.route("/plot_month", methods=["GET"])
+def plot_month():
+    try:
+        # Get parameters from query string
+        month = int(request.args.get('month'))
+        category = request.args.get('category', 'All Categories')
+
+        # Validate month
+        if month < 1 or month > 12:
+            return f"Error: Invalid month {month}. Must be between 1 and 12"
+
+        # Get the year from finCashflow instance
+        year = deepManager.finCashflow.YEAR
+
+        # Get monthly expense data using existing method
+        df_expenses_month = deepManager.finCashflow.calc_expenses(month=month)
+
+        # Check if there's data
+        if df_expenses_month.empty:
+            return f"No expense data found for {year}-{month:02d}"
+
+        # === BAR CHART: Always show all categories ===
+        df_expenses_month_by_category = df_expenses_month.groupby('Category')['Qty'].sum().reset_index(name='Expenses')
+        df_expenses_month_by_category = df_expenses_month_by_category.sort_values('Expenses', ascending=False)
+
+        # Prepare data for plotting
+        categories = list(df_expenses_month_by_category["Category"])
+        total_expenses_by_category = list(df_expenses_month_by_category["Expenses"])
+
+        # Configure plotext
+        plt.theme("pro")
+        plt.plotsize(60, 20)
+
+        # Create bar chart with orange color
+        plt.simple_bar(categories, total_expenses_by_category, width=60,
+                      title=f"{year}-{month:02d} Expenses - {category}", color="orange")
+        plt.show()
+        plt.clear_figure()
+
+        # === PIE CHART: Show only if specific category selected ===
+        if category != "All Categories":
+            # Filter data for selected category
+            df_filtered = df_expenses_month[df_expenses_month['Category'] == category]
+
+            if df_filtered.empty:
+                print(f"\n  No data found for category: {category}")
+                return "Done"
+
+            # Group by subcategory
+            df_subcat = df_filtered.groupby('Subcategory')['Qty'].sum().reset_index(name='Total')
+            df_subcat = df_subcat.sort_values('Total', ascending=False)
+
+            if len(df_subcat) == 0:
+                print(f"\n  No subcategories found for {category}")
+                return "Done"
+
+            # Convert to dictionary for pie chart
+            subcat_dict = df_subcat.set_index('Subcategory')['Total'].to_dict()
+
+            # Create pie chart using BudgetPlotter
+            budgetPlotter = BudgetPlotter()
+            print(f"\n  {category} - Subcategory Breakdown:")
+            budgetPlotter.draw_pie_chart(subcat_dict, width=50, height=30)
+
+        return "Done"
+    except ValueError as e:
+        return f"Error: Invalid month parameter - {str(e)}"
+    except AttributeError as e:
+        return f"Error: Database not initialized. Please initialize the database first."
+    except Exception as e:
+        return f"Error: {str(e)}"
+
 @app.route("/dashboard_status", methods=['GET'])
 def dashboard_status():
     try:
@@ -308,6 +380,7 @@ def dashboard_status():
           "networth": networth,
           "nwch": nwch,
           "pct_ch": pct_ch,
+          "all_balances": all_balances,
           "status": "success"
         })
     except Exception as e:
@@ -527,6 +600,39 @@ def get_row_count():
         return str(len(df))
     except Exception as e:
         return f"Error getting row count: {str(e)}"
+
+@app.route("/get_categories_for_month", methods=['GET'])
+def get_categories_for_month():
+    """Get list of categories with expenses for a specific month"""
+    try:
+        month = int(request.args.get('month'))
+
+        # Validate month
+        if month < 1 or month > 12:
+            return jsonify({"error": "Invalid month"}), 400
+
+        # Get monthly expense data
+        df_expenses_month = deepManager.finCashflow.calc_expenses(month=month)
+
+        # Check if there's data
+        if df_expenses_month.empty:
+            return jsonify({"categories": []})
+
+        # Get unique categories and sort
+        categories = df_expenses_month['Category'].unique().tolist()
+        categories.sort()
+
+        # Add "All Categories" as first option
+        categories.insert(0, "All Categories")
+
+        return jsonify({"categories": categories})
+
+    except ValueError as e:
+        return jsonify({"error": f"Invalid month parameter - {str(e)}"}), 400
+    except AttributeError as e:
+        return jsonify({"error": "Database not initialized"}), 500
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 @app.route("/get_subcategories", methods=['GET'])
 def get_subcategories():
