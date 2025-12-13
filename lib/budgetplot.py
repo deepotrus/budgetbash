@@ -58,7 +58,8 @@ class BudgetPlotter:
         ]
 
         # Use dots for better visibility
-        dot = '●'
+        dot = '█'
+        # ░ ▒ ▓ █
 
         # Center of the circle
         cx, cy = width // 2, height // 2
@@ -85,7 +86,7 @@ class BudgetPlotter:
                     # Determine which segment this point belongs to
                     for i, (start, end) in enumerate(angles):
                         if start <= angle < end:
-                            grid[y][x] = '●'
+                            grid[y][x] = f'{dot}'
                             color_grid[y][x] = colors[i % len(colors)]
                             break
 
@@ -95,7 +96,7 @@ class BudgetPlotter:
         for i, (label, value) in enumerate(items):
             color = colors[i % len(colors)]
             percentage = percentages[label]
-            legend_lines.append(f"{color}●●{self.color_RESET} {label}: {value} ({percentage:.1f}%)")
+            legend_lines.append(f"{color}{dot}{dot}{self.color_RESET} {label}: {value} ({percentage:.1f}%)")
         legend_lines.append(f"{self.color_BOLD}Total: {total}{self.color_RESET}")
 
         # Calculate legend width (find max length, accounting for ANSI codes)
@@ -110,11 +111,11 @@ class BudgetPlotter:
         first_row = 0
         last_row = height - 1
         for y in range(height):
-            if any(grid[y][x] == '●' for x in range(width)):
+            if any(grid[y][x] == f'{dot}' for x in range(width)):
                 first_row = y
                 break
         for y in range(height - 1, -1, -1):
-            if any(grid[y][x] == '●' for x in range(width)):
+            if any(grid[y][x] == f'{dot}' for x in range(width)):
                 last_row = y
                 break
 
@@ -130,8 +131,8 @@ class BudgetPlotter:
         for y in range(first_row, last_row + 1):
             line = ''
             for x, char in enumerate(grid[y]):
-                if char == '●':
-                    line += color_grid[y][x] + '●' + self.color_RESET
+                if char == f'{dot}':
+                    line += color_grid[y][x] + f'{dot}' + self.color_RESET
                 else:
                     line += ' '
 

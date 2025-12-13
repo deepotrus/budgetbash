@@ -39,12 +39,12 @@ To make a query on the csv database, GET requests with data must be provided in 
 At the current state, the application has database operations: view, add, delete. Also implements a cache directory for temporary market data for portfolio calculations.
 
 Next work includes:
-  [ok] Better visuals for cashflow expenses
-  [ok] Add networth history in the current year
-  [ok] Less hardcoding in config.json, allow user to choose its providers. Solved with mappings.json which makes condig.json user-agnostic with template expansion.
+  - [ok] Better visuals for cashflow expenses
+  - [ok] Add networth history in the current year
+  - [ok] Less hardcoding in config.json, allow user to choose its providers. Solved with mappings.json which makes condig.json user-agnostic with template expansion.
   - Handle old plot files
-  - Add monthly detailed view for expenses 
-  - Add card balances an all accounts
+  - [ok] Add monthly detailed view for expenses 
+  - [ok] Add card balances an all accounts
   - Clean cache on data folder (demo already implemented)
   - Revisit categories
   - In view database routine make a groupby on accounts providers (e.g. bank1, bank2)

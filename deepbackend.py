@@ -115,28 +115,38 @@ def plot():
     except Exception as e:
         return f"{e}"
 
+@app.route("/get_expenses_categories", methods=["GET"])
+def get_expenses_categories():
+    try:
+        month = int(request.args.get('month'))
+        
+        if month < 1 or month > 12:
+            return jsonify({"error": f"Invalid month {month}"}), 400
+        
+        df_expenses_month = deepManager.finCashflow.calc_expenses(month=month)
+        
+        if df_expenses_month.empty:
+            return jsonify({"categories": []})
+        
+        categories = sorted(df_expenses_month['Category'].unique().tolist())
+        return jsonify({"categories": categories})
+        
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 @app.route("/plot_month", methods=["GET"])
 def plot_month():
     try:
         # Get parameters from query string
         month = int(request.args.get('month'))
-        category = request.args.get('category', 'All Categories')
+        category = request.args.get('category')
 
-        # Validate month
         if month < 1 or month > 12:
             return f"Error: Invalid month {month}. Must be between 1 and 12"
-
-        # Get the year from finCashflow instance
-        year = deepManager.finCashflow.YEAR
 
         # Get monthly expense data using existing method
         df_expenses_month = deepManager.finCashflow.calc_expenses(month=month)
 
-        # Check if there's data
-        if df_expenses_month.empty:
-            return f"No expense data found for {year}-{month:02d}"
-
-        # === BAR CHART: Always show all categories ===
         df_expenses_month_by_category = df_expenses_month.groupby('Category')['Qty'].sum().reset_index(name='Expenses')
         df_expenses_month_by_category = df_expenses_month_by_category.sort_values('Expenses', ascending=False)
 
@@ -150,36 +160,31 @@ def plot_month():
 
         # Create bar chart with orange color
         plt.simple_bar(categories, total_expenses_by_category, width=60,
-                      title=f"{year}-{month:02d} Expenses - {category}", color="orange")
+                      title=f"{deepManager.finCashflow.YEAR}-{month:02d} Expenses", color="orange")
         plt.show()
         plt.clear_figure()
 
-        # === PIE CHART: Show only if specific category selected ===
-        if category != "All Categories":
-            # Filter data for selected category
-            df_filtered = df_expenses_month[df_expenses_month['Category'] == category]
+        # Filter data for selected category
+        df_filtered = df_expenses_month[df_expenses_month['Category'] == category]
 
-            if df_filtered.empty:
-                print(f"\n  No data found for category: {category}")
-                return "Done"
+        if df_filtered.empty:
+            return "No data found for category: {category}"
 
-            # Group by subcategory
-            df_subcat = df_filtered.groupby('Subcategory')['Qty'].sum().reset_index(name='Total')
-            df_subcat = df_subcat.sort_values('Total', ascending=False)
+        # Group by subcategory
+        df_subcat = df_filtered.groupby('Subcategory')['Qty'].sum().reset_index(name='Total')
+        df_subcat = df_subcat.sort_values('Total', ascending=False)
 
-            if len(df_subcat) == 0:
-                print(f"\n  No subcategories found for {category}")
-                return "Done"
+        if len(df_subcat) == 0:
+            return "No subcategories found for {category}"
 
-            # Convert to dictionary for pie chart
-            subcat_dict = df_subcat.set_index('Subcategory')['Total'].to_dict()
+        # Convert to dictionary for pie chart
+        subcat_dict = df_subcat.set_index('Subcategory')['Total'].to_dict()
 
-            # Create pie chart using BudgetPlotter
-            budgetPlotter = BudgetPlotter()
-            print(f"\n  {category} - Subcategory Breakdown:")
-            budgetPlotter.draw_pie_chart(subcat_dict, width=50, height=30)
+        # Create pie chart using BudgetPlotter
+        budgetPlotter = BudgetPlotter()
+        budgetPlotter.draw_pie_chart(subcat_dict, width=50, height=30)
 
-        return "Done"
+        return ""
     except ValueError as e:
         return f"Error: Invalid month parameter - {str(e)}"
     except AttributeError as e:
