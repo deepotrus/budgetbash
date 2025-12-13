@@ -13,6 +13,11 @@ After activating a python environment and having installed dependencies (which i
 ```
 Navigate through the menu and make sure to try the demo data!
 
+### Testing existing methods
+For testing existing methods in the library for validation, cd into project dir and run with package context:
+```shell
+    $ python3 -m lib.libtest.test_expansion 
+```
 ### Future work and improvements
 At the current state, the application has database operations: view, add, delete. Also implements a cache directory for temporary market data for portfolio calculations.
 

@@ -1,3 +1,6 @@
+from pathlib import Path
+import pandas as pd
+import json
 from datetime import datetime, timedelta
 
 def last_day_of_previous_month(date):
@@ -30,10 +33,6 @@ def define_prev_month_holdings(df_m_cashflow):
 
 
 # ------------------ LOAD DATA -------------------------
-from pathlib import Path
-import pandas as pd
-import json
-
 def load_init_holdings(path : Path, YEAR : int):
     try:
         with open(f"{path}/{YEAR}/{YEAR}_init.json") as file:
@@ -93,12 +92,119 @@ def found_cache_files(cache_dir : str, symbol, currency):
     except (OSError, PermissionError):
         return False
 
+# ------------------ HELPER FUNCTIONS FOR FLASK WRAPPER -------------
+def load_config():
+    """Load and return config.json"""
+    try:
+        with open('config.json', 'r') as f:
+            return json.load(f)
+    except Exception as e:
+        return None
 
-# -------------- PRETTY PRINTS --------------------
+def load_mappings():
+    """Load and return mappings.json"""
+    try:
+        with open('mappings.json', 'r') as f:
+            return json.load(f)
+    except Exception as e:
+        return None
 
-# Assumes df has datetime index!
-def format_df_for_print(df):
-    dfplot = df.copy()
-    dfplot = dfplot.round(2)
-    dfplot.index = dfplot.index.strftime('%Y-%m-%d')
-    return dfplot
+def expand_transfer_templates(config):
+    """Expand Transfer subcategories templates with actual provider names from mappings.json"""
+    try:
+        mappings = load_mappings()
+        if mappings is None:
+            return config
+
+        # Expand for cashflow
+        if 'cashflow' in config and 'Subcategory' in config['cashflow'] and 'Transfer' in config['cashflow']['Subcategory']:
+            transfer_templates = config['cashflow']['Subcategory']['Transfer']
+            expanded = []
+
+            for template in transfer_templates:
+                # Check if template contains placeholder
+                if '{' in template and '}' in template:
+                    # Extract placeholder: "To{Acc1}" -> "Acc1"
+                    start = template.index('{')
+                    end = template.index('}')
+                    placeholder = template[start+1:end]
+
+                    # Get mapped value
+                    if placeholder in mappings:
+                        # Replace placeholder with actual value
+                        expanded_value = template[:start] + mappings[placeholder] + template[end+1:]
+                        expanded.append(expanded_value)
+                    else:
+                        # Placeholder not found in mappings, keep as-is
+                        expanded.append(template)
+                else:
+                    # No placeholder (e.g., "Invest"), keep as-is
+                    expanded.append(template)
+
+            # Update config with expanded values
+            config['cashflow']['Subcategory']['Transfer'] = expanded
+
+        return config
+    except Exception as e:
+        # If expansion fails, return original config
+        return config
+
+def get_csv_path(data_type, year, month, data_path=None):
+    """Construct CSV file path for cashflow or investments"""
+    if data_path is None:
+        data_path = DATA_PATH
+    if data_path is None:
+        raise ValueError("Data path not set. Please initialize the backend first.")
+    
+    if data_type == "cashflow":
+        return f"{data_path}/{year}/cashflow/{year}-{month:02d}_cashflow.csv"
+    elif data_type == "investments":
+        return f"{data_path}/{year}/investments/{year}-{month:02d}_investments.csv"
+    else:
+        raise ValueError(f"Invalid data_type: {data_type}. Must be 'cashflow' or 'investments'")
+
+def determine_month_from_date(date_str):
+    """Extract month from date string (YYYY-MM-DD format)"""
+    try:
+        # Strip whitespace from date string
+        date_str = date_str.strip()
+        date_obj = datetime.strptime(date_str, "%Y-%m-%d")
+        return date_obj.month
+    except ValueError:
+        raise ValueError(f"Invalid date format: {date_str}. Expected YYYY-MM-DD")
+
+def validate_data(data_type, category, subcategory, coin=None, symbol=None):
+    """Validate category and subcategory against config.json"""
+    config = load_config()
+    if config is None:
+        return False, "Config file not found"
+
+    # Expand Transfer templates
+    config = expand_transfer_templates(config)
+
+    # Get the appropriate section based on data_type
+    if data_type not in ["cashflow", "investments"]:
+        return False, f"Invalid data_type: {data_type}. Must be 'cashflow' or 'investments'"
+
+    data_config = config.get(data_type, {})
+    if not data_config:
+        return False, f"Config section for {data_type} not found"
+
+    # Validate category
+    valid_categories = data_config.get("Category", [])
+    if category not in valid_categories:
+        return False, f"Invalid category. Must be one of {valid_categories}"
+
+    # Validate subcategory
+    subcategories = data_config.get("Subcategory", {})
+    if category in subcategories:
+        if subcategory not in subcategories[category]:
+            return False, f"Invalid subcategory for {category}. Must be one of {subcategories[category]}"
+
+    # Validate coin (for cashflow)
+    if data_type == "cashflow" and coin is not None:
+        valid_coins = data_config.get("Coin", [])
+        if coin not in valid_coins:
+            return False, f"Invalid coin. Must be one of {valid_coins}"
+
+    return True, "Valid"
