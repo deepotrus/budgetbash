@@ -5,9 +5,11 @@ import sys # for debug flag
 from ..common import load_config
 from ..common import load_mappings
 from ..common import expand_transfer_templates
-from ..common import get_csv_path
+from ..common import get_db_csv_path
 from ..common import determine_month_from_date
 from ..common import validate_data
+
+from pathlib import Path
 
 def test_expansion(debug : bool = False):
     if debug: print("Testing template expansion...")
@@ -39,7 +41,7 @@ def test_expansion(debug : bool = False):
 
     if not missing and not extra:
         if debug: print(f"All expected subcategories present!")
-        print(f"[OK] - {sys.argv[0]}")
+        print(f"[OK] - {sys.argv[0]} test_expansion")
     else:
         if debug:
             if missing:
@@ -48,7 +50,29 @@ def test_expansion(debug : bool = False):
                 print(f"NOT OK - Extra values: {extra}")
         print(f"[KO] - {sys.argv[0]}")
 
+def test_get_db_csv_path(debug : bool = False):
+    if debug: print("Testing getting csv path...")
+
+    data_type = "cashflow"
+    year = 2025
+    month = 1
+    data_path = Path("demo")
+
+    expected_csv_path = f"{data_path}/{year}/{data_type}/{year}-{month:02d}_{data_type}.csv"
+    csv_path = get_db_csv_path(data_type, year, month, data_path)
+
+    if debug:
+        print(f"Testing expected csv path: {expected_csv_path}")
+        print(f"Testing built csv path: {csv_path}")
+
+    if csv_path == expected_csv_path:
+        print(f"[OK] - {sys.argv[0]} test_get_db_csv_path")
+    else:
+        print(f"[KO] - {sys.argv[0]} test_get_db_csv_path")
+
+
 if __name__ == "__main__":
     debug = "--debug" in sys.argv[1:]
 
     test_expansion(debug=debug)
+    test_get_db_csv_path(debug=debug)

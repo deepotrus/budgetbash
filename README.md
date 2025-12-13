@@ -11,12 +11,29 @@ After activating a python environment and having installed dependencies (which i
 ```shell
     $ ./budgetbash
 ```
-Navigate through the menu and make sure to try the demo data!
+Navigate through the menu, enable the backend from Settings menú, then in the main menu initialize database, which loads your cashflow and investments data, then updates market data for assets. Then user can check his networth updated to the last market prices of the assets he posses!
 
 ### Testing existing methods
 For testing existing methods in the library for validation, cd into project dir and run with package context:
 ```shell
     $ python3 -m lib.libtest.test_expansion 
+```
+How to test backend routes? Run the deepbackend.py script and use curl to check its status
+```shell
+    $ python3 deepbackend.py 5001
+    $ curl -X GET localhost:5001/
+```
+There is a route which shows all available routes:
+```shell
+    $ curl -X GET localhost:5001/_routes
+```
+Launch the commands used by the bash frontend, which are just GET and POST requests:
+```shell
+    $ curl -X POST localhost:5001/initialize -d "year=2025&data_path=demo"
+```
+To make a query on the csv database, GET requests with data must be provided in this form:
+```shell
+    $ curl -s "localhost:5001/view_database?data_type=cashflow&year=2025&month=3"
 ```
 ### Future work and improvements
 At the current state, the application has database operations: view, add, delete. Also implements a cache directory for temporary market data for portfolio calculations.

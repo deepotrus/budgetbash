@@ -149,10 +149,8 @@ def expand_transfer_templates(config):
         # If expansion fails, return original config
         return config
 
-def get_csv_path(data_type, year, month, data_path=None):
+def get_db_csv_path(data_type, year, month, data_path=None):
     """Construct CSV file path for cashflow or investments"""
-    if data_path is None:
-        data_path = DATA_PATH
     if data_path is None:
         raise ValueError("Data path not set. Please initialize the backend first.")
     

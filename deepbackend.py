@@ -16,7 +16,7 @@ from lib import BudgetPlotter
 from lib import FlaskWrapper
 
 # Helper functions for flask wrapper
-from lib.common import load_config, load_mappings, expand_transfer_templates, get_csv_path, determine_month_from_date, validate_data
+from lib.common import load_config, load_mappings, expand_transfer_templates, get_db_csv_path, determine_month_from_date, validate_data
 
 # Terminal plot
 import plotext as plt
@@ -28,6 +28,8 @@ deepManager = FlaskWrapper()
 
 DATA_PATH = None # set during initialization
 
+import logging
+logging.getLogger('werkzeug').setLevel(logging.WARNING)  # Set flask logging level
 
 # ------------ FLASK ROUTES ------------------
 
@@ -251,7 +253,7 @@ def add_data():
             return f"Error: {error_msg}"
         
         # Get CSV path
-        csv_path = get_csv_path(data_type, year, month)
+        csv_path = get_db_csv_path(data_type, year, month, DATA_PATH)
         csv_file = Path(csv_path)
         
         # Load config to get columns
@@ -315,7 +317,7 @@ def delete_row():
         line_number = int(request.form.get('line_number'))
         
         # Get CSV path
-        csv_path = get_csv_path(data_type, year, month)
+        csv_path = get_db_csv_path(data_type, year, month, DATA_PATH)
         
         if not Path(csv_path).exists():
             return "Error: CSV file does not exist"
@@ -350,7 +352,7 @@ def view_database():
         month = int(request.args.get('month'))
         
         # Get CSV path
-        csv_path = get_csv_path(data_type, year, month)
+        csv_path = get_db_csv_path(data_type, year, month, DATA_PATH)
         
         if not Path(csv_path).exists():
             return "Error: CSV file does not exist"
@@ -381,7 +383,7 @@ def get_row_data():
         line_number = int(request.args.get('line_number'))
         
         # Get CSV path
-        csv_path = get_csv_path(data_type, year, month)
+        csv_path = get_db_csv_path(data_type, year, month, DATA_PATH)
         
         if not Path(csv_path).exists():
             return "Error: CSV file does not exist"
@@ -415,7 +417,7 @@ def get_row_count():
         month = int(request.args.get('month'))
         
         # Get CSV path
-        csv_path = get_csv_path(data_type, year, month)
+        csv_path = get_db_csv_path(data_type, year, month, DATA_PATH)
         
         if not Path(csv_path).exists():
             return "0"
@@ -488,6 +490,18 @@ def get_subcategories():
             return ""
     except Exception as e:
         return f"Error getting subcategories: {str(e)}"
+
+#$ curl -X GET _routes to view all routes
+@app.route("/_routes")
+def routes():
+    lines = []
+    for rule in app.url_map.iter_rules():
+        if str(rule).startswith("/static/"):
+            continue
+        methods = ",".join(sorted(rule.methods - {"HEAD","OPTIONS"}))
+        lines.append(f"{methods:10s} {rule}")
+    return "\n".join(lines)
+
 
 if __name__ == "__main__":
     app.run(debug=True, port=sys.argv[1])
