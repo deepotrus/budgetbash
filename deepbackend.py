@@ -59,6 +59,13 @@ def initialize():
 
     return f"Succesfully initialized {year} data from path {data_path}."
 
+@app.route("/investments", methods=["GET"])
+def investments():
+    df_holdings, df_today_holdings = deepManager.get_investments_info()
+    print(df_holdings)
+    print(df_today_holdings)
+    return "Done"
+
 @app.route("/plot", methods=["GET"])
 def plot():
     try:
@@ -94,7 +101,6 @@ def plot():
         percentage = list(df_expenses_year["Percentage"])
 
         expenses_dict = df_expenses_year.set_index('Category')['Expenses'].to_dict()
-        print(expenses_dict)
         budgetPlotter = BudgetPlotter()
         budgetPlotter.draw_pie_chart(expenses_dict, width=50, height=30)
 

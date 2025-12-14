@@ -34,6 +34,12 @@ class FlaskWrapper:
 
         return df_m_cashflow, df_expenses_year_by_category, df_incomes_year_by_category
 
+    def get_investments_info(self):
+        df_year_holdings_class = self.finInvestments.df_year_holdings_class
+        df_today_holdings_class = self.finInvestments.df_today_holdings_class
+
+        return df_year_holdings_class, df_today_holdings_class
+
     def calc_global_nw(self):
         # Retrieve data from classes
         row_today_cashflow = self.finCashflow.df_last_month_cashflow

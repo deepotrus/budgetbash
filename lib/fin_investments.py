@@ -35,6 +35,9 @@ class FinInvestments:
         self.assets : Dict[str, Dict[str, pd.DataFrame]]
         self.df_year_holdings : pd.DataFrame = pd.DataFrame()
         self.df_today_holdings : pd.DataFrame = pd.DataFrame()
+
+        self.df_year_holdings_class : pd.DataFrame = pd.DataFrame()
+        self.df_today_holdings_class : pd.DataFrame = pd.DataFrame()
         pass
 
     def get_init_holdings_to_df(self):
@@ -163,7 +166,13 @@ class FinInvestments:
         return assets
 
     # The final nice front end table
+    # returns in symbols format: SOL, ETH, USDT, IE00BK5BQT80,...
+    # and asset class format: Cryptocurrencies, ETFs, ...
     def get_total_holdings(self, assets):
+        dfl_class = list()
+        column_names_class = list()
+        total_asset_class = 0
+
         dfl = list()
         column_names = list()
         for asset_class in assets.keys():
@@ -172,9 +181,19 @@ class FinInvestments:
                 dfl.append(assets[asset_class][symbol]['Holdings'])
                 column_names.append(symbol)
 
+                total_asset_class += assets[asset_class][symbol]['Holdings']
+            column_names_class.append(asset_class)
+            dfl_class.append(total_asset_class)
+            
+            # reinit var for next iteration
+            total_asset_class = 0
+
+        df_year_holdings_class = pd.concat(dfl_class, axis=1, keys=column_names_class)
+        df_year_holdings_class['Total'] = df_year_holdings_class.sum(axis=1)
+
         df_year_holdings = pd.concat(dfl, axis=1, keys=column_names)
         df_year_holdings['Total'] = df_year_holdings.sum(axis=1)
-        return df_year_holdings
+        return df_year_holdings, df_year_holdings_class
 
     def run(self):
         df_init_investments = self.get_init_holdings_to_df()
@@ -182,8 +201,8 @@ class FinInvestments:
         holdings_monthlyized = self.get_holdings_monthlyized()
         assets_monthlyized = self.get_assets_monthlyized(holdings_monthlyized)
         assets = self.get_assets_global(assets_monthlyized, holdings_monthlyized)
-        self.df_year_holdings = self.get_total_holdings(assets)
-        self.df_today_holdings = self.last_update_run()
+        self.df_year_holdings, self.df_year_holdings_class = self.get_total_holdings(assets)
+        self.df_today_holdings, self.df_today_holdings_class = self.last_update_run()
         pass
 
     # ---------------- REAL TIME UPDATES ---------------------------
@@ -250,25 +269,13 @@ class FinInvestments:
             assets_global_current_day[asset_class] = assets_symb
         return assets_global_current_day
 
-    # The final nice front end table
-    def get_total_holdings(self, assets):
-        dfl = list()
-        column_names = list()
-        for asset_class in assets.keys():
-            for symbol in assets[asset_class].keys():
-                # Append dataframe series
-                dfl.append(assets[asset_class][symbol]['Holdings'])
-                column_names.append(symbol)
 
-        df_year_holdings = pd.concat(dfl, axis=1, keys=column_names)
-        df_year_holdings['Total'] = df_year_holdings.sum(axis=1)
-        return df_year_holdings
 
     def last_update_run(self):
         current_holdings = self.get_current_holdings()
         assets_current_day = self.get_current_assets_price(current_holdings)
         assets_global_current_day = self.get_current_assets_holdings(assets_current_day, current_holdings)
-        df_today_holdings = self.get_total_holdings(assets_global_current_day)
+        df_today_holdings, df_today_holdings_class = self.get_total_holdings(assets_global_current_day)
 
         if df_today_holdings.shape[0] > 1: # in essence buggy situations when market data is not available, e.g. etfs and it's sunday
             Logger.info("Investments DataFrame has multiple rows - need to collapse")
@@ -277,9 +284,16 @@ class FinInvestments:
             df_collapsed.index = [df_today_holdings.index[-1]]
             df_today_holdings = df_collapsed
 
+        if df_today_holdings_class.shape[0] > 1: # in essence buggy situations when market data is not available, e.g. etfs and it's sunday
+            Logger.info("Investments DataFrame has multiple rows - need to collapse")
+            # Your collapsing logic here
+            df_collapsed = df_today_holdings_class.fillna(0).sum().to_frame().T
+            df_collapsed.index = [df_today_holdings_class.index[-1]]
+            df_today_holdings_class = df_collapsed
+
         Logger.debug("\n current_holdings:\n%s", current_holdings)
         Logger.debug("\n assets_current_day:\n%s", assets_current_day)
         Logger.debug("\n assets_global_current_day:\n%s", assets_global_current_day)
         Logger.debug("\n df_today_holdings:\n%s", df_today_holdings.to_string())
 
-        return df_today_holdings
+        return df_today_holdings, df_today_holdings_class
