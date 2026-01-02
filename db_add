@@ -135,7 +135,7 @@ add_data() {
   # Year selection
   local current_year=$(date +%Y)
   local years=("2023" "2024" "2025" "2026")
-  local current_year_index=2  # Default to 2025
+  local current_year_index=3  # Default to 2026
   
   # Date input
   local date_input=""

@@ -68,7 +68,7 @@ def load_data(typedata : str, path : Path, YEAR : int):
                 if not(df.empty):
                     dfl.append(df)
             except Exception as e:
-                #print(e)
+                print(e)
                 continue
 
         df_year = pd.concat(dfl)

@@ -57,13 +57,16 @@ class FlaskWrapper:
         nw_global = pd.concat([nw, nw_current_month])
         nw_global["nwch"] = (nw_global.networth - nw_global.networth.shift(1) )
         nw_global["ch%"] = (nw_global.networth - nw_global.networth.shift(1) )/ nw_global.networth
-
         self.nw_global = nw_global
         return nw_global
 
     # Today Networth status
     def get_nw_status(self):
-        return self.nw_global.iloc[-1].round(2)
+        last_row = self.nw_global.iloc[-1]
+        last_row = last_row.astype('float64')
+        print(last_row.dtypes)
+        print(last_row)
+        return last_row.round(2)
     
     def get_all_balances(self):
         all_balances = self.finCashflow.get_all_balances()

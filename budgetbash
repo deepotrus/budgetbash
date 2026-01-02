@@ -49,7 +49,7 @@ if ! check_port_available "$port_number"; then
   exit 1
 fi
 
-YEAR=2025
+YEAR=2026
 DATA_PATH="../data"
 
 BANNER="
@@ -361,7 +361,7 @@ view_database_interactive() {
   local current_year=$(date +%Y)
   local current_month=$(date +%m | sed 's/^0//')  # Remove leading zero
   local years=("2023" "2024" "2025" "2026" "2027")
-  local current_year_index=2  # Default to 2025, adjust if needed
+  local current_year_index=3  # Default to 2026, adjust if needed
   for i in "${!years[@]}"; do
     if [ "${years[$i]}" = "$current_year" ]; then
       current_year_index=$i

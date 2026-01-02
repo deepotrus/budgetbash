@@ -37,7 +37,7 @@ def test_load_data(year : int, data_path : Path, debug : bool = False):
 
 if __name__ == "__main__":
   debug = "--debug" in sys.argv[1:]
-  year = 2025
-  data_path = Path("demo")
+  year = 2026
+  data_path = Path("../data")
 
   test_load_data(year=year, data_path=data_path, debug=debug)

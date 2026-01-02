@@ -54,7 +54,7 @@ def test_get_db_csv_path(debug : bool = False):
     if debug: print("Testing getting csv path...")
 
     data_type = "cashflow"
-    year = 2025
+    year = 2026
     month = 1
     data_path = Path("demo")
 
