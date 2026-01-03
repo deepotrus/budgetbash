@@ -206,3 +206,8 @@ def validate_data(data_type, category, subcategory, coin=None, symbol=None):
             return False, f"Invalid coin. Must be one of {valid_coins}"
 
     return True, "Valid"
+
+# preserves stable order of lists a and b to merge
+def merge_lists_unique_into_set(a, b):
+    merged = [x for x in a if x not in b] + b
+    return merged

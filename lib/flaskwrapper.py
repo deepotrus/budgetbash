@@ -64,11 +64,8 @@ class FlaskWrapper:
     def get_nw_status(self):
         last_row = self.nw_global.iloc[-1]
         last_row = last_row.astype('float64')
-        print(last_row.dtypes)
-        print(last_row)
         return last_row.round(2)
     
     def get_all_balances(self):
         all_balances = self.finCashflow.get_all_balances()
-
         return all_balances

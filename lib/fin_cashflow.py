@@ -35,7 +35,8 @@ class FinCashflow:
     def get_all_balances(self):
         balances = dict()
         accounts = self.df_year_cashflow['Type'].unique().tolist()
-        for cc in accounts:
+        merged = merge_lists_unique_into_set(accounts, list(self.init_holdings['liquidity_eur'].keys()))
+        for cc in merged:
             if cc in self.init_holdings['liquidity_eur'].keys():
                 val = self.df_year_cashflow.loc[self.df_year_cashflow["Type"] == cc]['Qty'].sum() + self.init_holdings['liquidity_eur'][cc]
                 balances[cc] = round(float(val), 2)

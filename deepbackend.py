@@ -202,13 +202,8 @@ def plot_month():
 def dashboard_status():
     try:
         deepManager.calc_global_nw()
-        print("1")
         nw_status = deepManager.get_nw_status()
-        print("2")
         all_balances = deepManager.get_all_balances()
-        print("3")
-
-        print(all_balances)
 
         liquidity = nw_status['liquidity']
         investments = nw_status['investments']
