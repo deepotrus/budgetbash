@@ -12,11 +12,11 @@
       "Health": ["Gym", "Hygiene", "Eyes", "Visit"],
       "Leisure": ["Food", "Drink", "Events", "Restaurant", "Games", "Party", "Coffee"],
       "Transport": ["Bicycle", "Gasoline", "Train"],
-      "Shop": ["Accessories", "Clothes"],
+      "Shop": ["Accessories", "Clothes", "Homecare"],
       "Bills": ["Rent", "Wood", "Water", "Electricity", "Gas", "Rubbish"],
       "Karma": ["Received", "Gift", "Offered", "Family"],
       "Other": ["Papers", "Gifts", "Fines", "Taxes", "Lost","Other"],
-      "Car": ["Gasoline", "Care", "Maintenance", "Toll", "Buy", "Papers", "RCA"],
+      "Car": ["Gasoline", "Care", "Maintenance", "Toll", "Buy", "Papers", "RCA", "Cartax", "Revision"],
       "Holiday": ["Rent", "Transport", "Drink", "Shop", "Food", "Restaurant", "Party", "Groceries"],
       "Income": ["Cashback", "Interests", "Goodselling", "Promotion", "Private", "Salary", "Bonus", "Reimbursement"]
     },
